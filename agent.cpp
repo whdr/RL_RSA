@@ -135,11 +135,14 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 				capa[freq][i] = 1;// /*agent->fiber_data->val[i][0]*/ / cfg->max_fiber_num;
 		}
 
-		make_traffic(traffic, cfg);	/*トラフィック生成*/
+		/*トラフィック生成*/
+		make_traffic(traffic, cfg);
 		int blocking_num = 0;
-		while (blocking_num < 1 + path_num / 100) {
+		while (true) {
 			if ((select_freq(traffic[0], traffic[1], capa, nn, agent, tPathL, mode_forDicision, cfg)) == NULL) {//割当ができなくなるまで
 				blocking_num++;/*ブロッキング*/
+				if (blocking_num >= 1 + path_num / 100)/*終了判定*/
+					break;
 				make_traffic(traffic, cfg);
 				continue;
 			}
@@ -158,6 +161,7 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 					fprintf(cfg->capacity_transition_file, "\n");
 				}
 			}
+
 
 			/*削除ルーチン*/
 			if (counter_forDelete % cfg->delete_frequency == 0) {
@@ -186,6 +190,7 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 	return (double)path_sum / cfg->evaluate_sim_num;
 
 }
+
 
 
 /*
@@ -328,51 +333,51 @@ mode_forDicision 0:NNの価値の最大値、1:最短経路からFF、2: 残余容量ダイクストラ
 output_flag 評価を行う時(evaluate)、output_flagがオンの時,action_process.csv ファイルに出力する
 */
 double **select_freq(int s, int d, double **capa, NN *nn, Agent *agent, PathList *path_list, int mode_forDicision, Config *cfg) {
-	int route_index = -1, target_route_index = -1;
+	int target_freq = -1, route_index = -1, target_route_index = -1;
 	double min_value = 1000000, max_value = -1000000, value;
-	double *capa_total = (double*)malloc(cfg->input_num * sizeof(double));
 	double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));
-
-
-
-
-	/*capa_totalの作成*/
-	for (int i = 0; i < cfg->input_num; i++) {
-		capa_total[i] = 0;
-		for (int freq = 0; freq < cfg->freq_num; freq++)
-			capa_total[i] += capa[freq][i];
-		capa_total[i] = capa_total[i] / agent->channel_num;
-	}
-	for (int route = 0; route < cfg->route_k; route++) {
-		if (route == 1)
-			int y = 0;
-		/*経路の選択*/
-		int target_route_index = select_route(s, d, capa_total, cfg->epsilon, nn, agent, mode_forDicision, 0, route, cfg);
-		if (target_route_index == -1)
+	for (int freq = 0; freq < cfg->freq_num; freq++) {
+		double value_current = forward(nn, capa[freq], cfg);
+		/*この波長に割り当て可能か*/
+		if ((route_index = select_route(s, d, capa[freq], 0, nn, agent, mode_forDicision, 0, 0, cfg)) == -1)
 			continue;
-		/*すべての波長でFF*/
-		for (int freq = 0; freq < cfg->freq_num; freq++) {
-			int escape_flag = 0;
-			/*割り当て可能かの判定*/
-			for (int i = 0; i < cfg->input_num; i++) {
-				if (capa[freq][i] < agent->route_table->val[target_route_index][i + 2] / agent->channel_num) {
-					escape_flag = 1;
-					break;
-				}
+		/*FF＆ダイクストラ　-　割当可能波長が見つかればすぐ割り当る*/
+		if (mode_forDicision == 1 || mode_forDicision == 2) {
+			target_route_index = route_index;
+			target_freq = freq;
+			break;
+		}
+		for (int i = 0; i < cfg->input_num; i++) {
+			capa_tmp[i] = capa[freq][i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//次状態候補
+		}
+		/*価値の最大を選択*/
+		if (cfg->selectFreq_mode == 0) {
+			value = forward(nn, capa_tmp, cfg);
+			if (max_value < value) {
+				max_value = value;
+				target_freq = freq;
+				target_route_index = route_index;
 			}
-			if (escape_flag == 1)
-				continue;
-
-			/*割当*/
-			Path_Add(s, d, freq, target_route_index, path_list, cfg);
-			for (int i = 0; i < cfg->input_num; i++)
-				capa[freq][i] = capa[freq][i] - agent->route_table->val[target_route_index][i + 2] / agent->channel_num;
-			return capa;
-
+		}
+		else {/*価値の低減の最小を選択*/
+			value = value_current - forward(nn, capa_tmp, cfg);
+			if (min_value > value) {
+				min_value = value;
+				target_freq = freq;
+				target_route_index = route_index;
+			}
 		}
 	}
-	return NULL;
+	free(capa_tmp);
+	if (target_freq == -1)
+		return NULL;
+	/*割当*/
+	Path_Add(s, d, target_freq, target_route_index, path_list, cfg);
+	for (int i = 0; i < cfg->input_num; i++)
+		capa[target_freq][i] = capa[target_freq][i] - agent->route_table->val[target_route_index][i + 2] / agent->channel_num;
+	return capa;
 }
+
 
 
 double get_value_dijkstra(double *capa, double *route, Config *cfg) {
