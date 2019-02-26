@@ -15,6 +15,7 @@ typedef struct Config {
 	int route_k;
 
 	int delete_frequency;
+	int select_priority;
 
 	int topology;
 	int hop_slug;

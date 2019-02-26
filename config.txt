@@ -17,6 +17,10 @@ FREQ_NUM=5
 
 DELETE_FREQUENCY=3
 
+#各波長で経路探索するのか(0)、全体の容量から経路を選択して波長割り当てをするのか(1)
+SELECT_PRIORITY=0
+
+
 
 #demand (0:uniform, 1:central)
 DEMAND_PATTERN=1

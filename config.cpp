@@ -31,6 +31,7 @@ Config *Config_new(const char *config) {
 	cfg->freq_num = ConfigFileReader_get_int(cfr, "FREQ_NUM");
 	cfg->lim_block_num = ConfigFileReader_get_int(cfr, "LIMIT_BLOCK_NUM");
 	cfg->selectFreq_mode = ConfigFileReader_get_int(cfr, "SELECTFREQ_MODE");
+	cfg->select_priority = ConfigFileReader_get_int(cfr, "SELECT_PRIORITY");
 
 
 	/*トラフィックConfig*/
