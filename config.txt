@@ -1,0 +1,77 @@
+
+
+#topolpgy (0:3x3, 1:JPN12, 2:jpn25, 3:NSFNET16)
+TOPOLOGY=4
+HOP_SLUG=0
+ROUTE_K=30
+#経路候補数
+ROUTE_CANDIDATE=100
+LIMIT_BLOCK_NUM=10
+#波長割り当ての際、価値最大の選択(0)か、価値の低減が最小を選択(1)
+SELECTFREQ_MODE=0
+
+#Fiber (0: 一様配置、1: ununi)
+FIBER_DISTRIBUTION=0
+FIBER_NUM=8
+FREQ_NUM=5
+
+DELETE_FREQUENCY=3
+
+
+#demand (0:uniform, 1:central)
+DEMAND_PATTERN=1
+CENTRAL_NODE=2
+CENTRAL_DEGREE=1
+
+SIMULATION_NUM=5
+MAINTRAIN_TIME=10
+EVALUATE_SIM_NUM=30
+
+#NN用パラメータ
+HIDDEN_NUM=32
+HIDDEN_LAYER_NUM=1
+ALPHA=0.0001
+#alphaの正規化(0:変動なし、1:変動あり)
+ALPHA_NORMALIZATION=1
+ALPHA_ATTENUATION=1
+GAMMA=0.99
+LAMBDA=0.9
+EPSILON=0.01
+
+#報酬 0の時ホップ数を報酬とする
+REWARD=0
+#隠れ層ニューロンタイプ(1:sigmoid, 2:sigmoid_approx, 3:Leaky_ReLU)
+HIDDEN_NEURON=3
+#出力層ニューロンタイプ(1:sigmoid, 2:sigmoid_approx, 3:Leaky_ReLU)
+OUTPUT_NEURON=3
+LEAK=0.1
+
+#画面出力するか
+OUTPUT_STATUS=1
+OUTPUT_ACCURACY=1
+OUTPUT_CAPACITY_TRANSITION=1
+
+
+#output file
+BLOCKING_LINK_HIST_FILE=block_link_hist.csv
+ACCURACY_MAINLEARN_FILE=accuracy_learn.csv
+CAPACITY_TRANSITION_FILE=capacity.csv
+ACTION_PROCESS_FILE=action_process.csv
+STEP_NUM_HISTOGRAM_FILE=step_hist.csv
+WEIGHT_I_FILE=weight_i.csv
+WEIGHT_H_FILE=weight_h.csv
+WEIGHT_O_FILE=weight_o.csv
+OUTPUT_FILE=output.csv
+
+
+#input file
+READ_WEIGHT_I_FILE=weight/3/weight_i.csv
+READ_WEIGHT_H_FILE=weight/3/weight_h.csv
+READ_WEIGHT_O_FILE=weight/3/weight_o.csv
+
+#ディレクトリ
+OUTDIR=outdir/
+
+BLOCK=100
+
+READ_WEIGHT=0
