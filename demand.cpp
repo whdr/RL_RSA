@@ -156,7 +156,15 @@ void Demand_AllDel(struct Demand *dmnd)
 void Delete_DemandList(struct DemandList *aDemandL)
 {
 	if (aDemandL->dmnd_head != NULL) {
-		Demand_AllDel(aDemandL->dmnd_head);
+		Demand *temp = aDemandL->dmnd_head;
+		Demand *demand = temp->next;
+
+		while (demand != NULL) {
+			temp = demand->next;
+			free(demand);
+			demand = temp;
+		}
+		
 	}
 	free(aDemandL);
 }
@@ -364,7 +372,7 @@ struct Demand *New_Search(int t, SortedDemand *arvl_l, int *st, int *another)
 
 short *compress_DemandL(SortedDemand *s_dmnd, SortedDemand *e_dmnd, Config *cfg) {
 	int job_num = 1;
-	short *job_table = (short*)malloc(10000 * sizeof(short));
+	short *job_table = (short*)malloc(100000 * sizeof(short));
 	for (int t = 0; t < cfg->time; t++) {
 		int end = 0, st = 0, another = 0;
 

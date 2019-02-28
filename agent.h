@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "NN.h"
-#include "path.h"
 #include "demand.h"
 #define MAIN_LEARN 0
 #define SHORTEST_ONLY 1

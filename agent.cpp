@@ -121,6 +121,7 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 		}
 		Delete_SortedDemand2(stl);
 		Delete_SortedDemand(enl);
+		Delete_DemandList(tDemandL);
 		free(capa);
 	}
 }
@@ -131,7 +132,7 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 	long int path_sum = 0, totalBlockingNum = 0;
 	double **capa;
-	double res_block = 0.0;// (double*)malloc(cfg->evaluate_sim_num * sizeof(double));
+	//double res_block = 0.0;// (double*)malloc(cfg->evaluate_sim_num * sizeof(double));
 
 	//double *capa_total = (double*)malloc(cfg->input_num * sizeof(double));
 	for (int sim = 0; sim < cfg->evaluate_sim_num; sim++) {
@@ -188,11 +189,14 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 
 		totalBlockingNum += blocking_num;
 		/*capa　片付け*/
+		free(tJobTable);
 		for (int i = 0; i < cfg->freq_num; i++)
 			free(capa[i]);
 		free(capa);
 		Delete_SortedDemand2(stl);
 		Delete_SortedDemand(enl);
+		free(tDemandL);
+		
 	}
 	/*画面出力*/
 	if (cfg->outputStatus == 1)printf("blocking_rate -> %lf\n", (double)totalBlockingNum / path_sum);
@@ -288,6 +292,7 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 	/*割り当て候補が一つもない*/
 	if (existing_flag == 0) {//cfg->max_or_min == 0 && output_value == -1000.0 || cfg->max_or_min != 0 && output_value == 1000.0 ||
 		//片付け
+		free(route_value_list);
 		free(capa_tmp);
 		free(for_random_select);
 		return -1;
@@ -326,6 +331,7 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 		while (for_random_select[output_index - agent->route_table_index[s][d]] == 0)
 			output_index = agent->route_table_index[s][d] + rand() % cfg->route_k;
 	}
+	free(route_value_list);
 	free(capa_tmp);
 	free(for_random_select);
 	return output_index;
