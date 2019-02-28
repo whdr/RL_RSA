@@ -112,6 +112,7 @@
   <ItemGroup>
     <ClCompile Include="agent.cpp" />
     <ClCompile Include="config.cpp" />
+    <ClCompile Include="demand.cpp" />
     <ClCompile Include="load_matrix.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="cfgfile.cpp" />
@@ -123,6 +124,7 @@
     <ClInclude Include="agent.h" />
     <ClInclude Include="cfgfile.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="demand.h" />
     <ClInclude Include="load_matrix.h" />
     <ClInclude Include="NN.h" />
     <ClInclude Include="misc.h" />

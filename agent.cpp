@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+ï»¿#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -10,7 +10,6 @@ Agent *init_agent(MATRIX *aRoute_table, MATRIX *aFiber_data, Config *cfg) {
 	Agent *agent = (Agent *)malloc(sizeof(Agent));
 
 	agent->fiber_data = aFiber_data;
-	agent->shortest_path_num = (int*)calloc(1, sizeof(int));
 	agent->channel_num = cfg->fiber_basis_num * cfg->max_fiber_num;
 	agent->route_table_index = (int**)calloc(cfg->node_num, sizeof(int*));
 	for (int i = 0; i < cfg->node_num; i++)
@@ -22,207 +21,216 @@ Agent *init_agent(MATRIX *aRoute_table, MATRIX *aFiber_data, Config *cfg) {
 
 void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 
-
-	int path_sum = 0;/*Š„“–ƒpƒX‘”@ƒGƒsƒ\[ƒh‚ğ‚Ü‚½‚ª‚Á‚Ä‡Œv‚·‚é*/
-	double *capa;/*Œ»ó‘ÔAŸó‘Ô‚ÌƒŠƒ“ƒNƒLƒƒƒpƒVƒeƒB*/
-	double e_total = 0.0;/*Œë·@û‘©‚ÌŠm”F—p*/
-	int *traffic = (int*)calloc(2, sizeof(int));/*ƒpƒXİ—§—v‹@n’[ƒm[ƒh”Ô†‚ÆI’[ƒm[ƒh”Ô†*/
-	double alpha = cfg->alpha;/*ŠwK—¦@ƒ¿Œ¸Šonİ’è‚Ì‚½‚ß‚ÉAlpha“Æ—§*/
+	int path_sum = 0;/*å‰²å½“ãƒ‘ã‚¹ç·æ•°ã€€ã‚¨ãƒ”ã‚½ãƒ¼ãƒ‰ã‚’ã¾ãŸãŒã£ã¦åˆè¨ˆã™ã‚‹*/
+	double *capa;/*ç¾çŠ¶æ…‹ã€æ¬¡çŠ¶æ…‹ã®ãƒªãƒ³ã‚¯ã‚­ãƒ£ãƒ‘ã‚·ãƒ†ã‚£*/
+	double e_total = 0.0;/*èª¤å·®ã€€åæŸã®ç¢ºèªç”¨*/
+	//int *traffic = (int*)calloc(2, sizeof(int));/*ãƒ‘ã‚¹è¨­ç«‹è¦æ±‚ã€€å§‹ç«¯ãƒãƒ¼ãƒ‰ç•ªå·ã¨çµ‚ç«¯ãƒãƒ¼ãƒ‰ç•ªå·*/
+	double alpha = cfg->alpha;/*å­¦ç¿’ç‡ã€€Î±æ¸›è¡°onè¨­å®šã®ãŸã‚ã«Alphaç‹¬ç«‹*/
 	double value_current, value_next;
 	int reward, train_time, route_index;
-	PathList *tPathL = PathList_New(cfg);
 
 	/*main_learn*/
 	for (long int sim = 0; sim < cfg->main_train_time; sim++) {
 
-		/*c—]—e—Êƒf[ƒ^@—v‘f”‚Íƒgƒ|ƒƒW‚ÌƒŠƒ“ƒN”*/
+
+		Demand *endd, *std;				/*ãƒã‚¤ãƒ³ã‚¿ç”¨*/
+		SortedDemand *stl, *enl;			/*ã‚½ãƒ¼ãƒˆç”¨ãƒ‡ãƒãƒ³ãƒ‰ãƒªã‚¹ãƒˆ*/
+		DemandList *tDemandL = DemandList_New();
+		Make_DemandList(tDemandL, 1, cfg);/*ãƒ‡ãƒãƒ³ãƒ‰ã®ç”Ÿæˆ*/
+													  /* é–‹å§‹æ™‚åˆ»é †ã«ã‚½ãƒ¼ãƒˆ */
+		stl = SortedDemand_New(tDemandL);
+		Put_Start_Time_To_SortIdx(stl);
+		Sort_Demand_Index_Small(stl);
+		/* çµ‚äº†æ™‚åˆ»é †ã«ã‚½ãƒ¼ãƒˆ */
+		enl = SortedDemand_New(tDemandL);
+		Put_End_Time_To_SortIdx(enl);
+		Sort_Demand_Index_Small(enl);
+		short *tJobTable = compress_DemandL(stl, enl, cfg);/*ç„¡é§„ãªæ™‚é–“ã‚’ãªãã™ãŸã‚ã€ã‚¸ãƒ§ãƒ–ã®ãªã„æ™‚é–“ã¯èµ°æŸ»ã—ãªã„*/
+
+		path_sum += tDemandL->dmnd_num;
+		int end = 0, st = 0, another = 0;
+		int blocking_num = 0, path_num = 0;;
 		capa = (double*)malloc(cfg->input_num * sizeof(double));
-		/*c—]—e—Ê‚Ì‰Šú‰»
-		Œ»İ‚Íƒtƒ@ƒCƒoˆê—l‚Ì‚½‚ß‚·‚×‚Ä1*/
 		for (int i = 0; i < cfg->input_num; i++)
 			capa[i] = 1;
+		int escape_flag = 0;
 
-		/*ƒgƒ‰ƒtƒBƒbƒN¶¬*/
-		make_traffic(traffic, cfg);
-
-
-		int counter_for_delete = 0;
-		/*ƒuƒƒbƒLƒ“ƒO‚ª¶‚¶‚é‚Ü‚ÅƒpƒX‚ğˆê–{‚¸‚ÂŠ„‚è“–‚Ä‚é*/
-		while ((route_index = select_route(traffic[0], traffic[1], capa, cfg->epsilon, nn, agent, learn_mode, 0, 0, cfg)) != -1) {//Š„“–‚ª‚Å‚«‚È‚­‚È‚é‚Ü‚Å
-			/*Š„“–*/
-			Path_Add(traffic[0], traffic[1], 0, route_index, tPathL, cfg);
-
-			//printf("%d, %d\n", traffic[0], traffic[1]);
-			for (int i = 0; i < cfg->input_num; i++) {
-				capa[i] = capa[i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//Ÿó‘ÔŒó•â
-			}
-			counter_for_delete++;
-			path_sum++;
-			/*‡•ûŒü‚ÌŒvZ*//*‚µ‚½“ñ‚Â‚Ì‡”Ô‚ğ•Ï‚¦‚énn->hi‚Ì‹““®‚ª•Ï‚í‚è—Ç‚­‚È‚¢*/
-			value_next = forward(nn, capa, cfg);
-			value_current = forward(nn, capa, cfg);
-			if (cfg->reward == 0)
-				reward = get_shortestHop(agent, traffic[0], traffic[1], cfg);
-			else
-				reward = cfg->reward;
-
-			/*ŠwK‚Ì€”õ*/
-			double delta;
-			if (cfg->alpha_normalization == 0)
-				delta = reward + cfg->gamma * value_next - value_current;
-			else/*ó‘Ô‰¿’l‚Å³‹K‰»‚·‚éê‡*/
-				delta = (reward + cfg->gamma * value_next - value_current) / (value_current + 1);
-			e_total += delta * delta;
-			/*Alpha‚ÌŒ¸Š*/
-			alpha *= cfg->alpha_attenuation;
-			if (alpha < 0.0001)
-				alpha = 0.0001;
-			/*û‘©‹ï‡‚Ìƒtƒ@ƒCƒ‹o—Í*/
-			if (path_sum % 1000 == 0) {
-				fprintf(cfg->accuracy_learn_file, "%lf, %lf\n", e_total / 1000, alpha);
-				e_total = 0;
-			}
-
-			/*ŠwK*/
-			olearn(nn, value_current + alpha * delta, value_current, cfg);
-			if (cfg->hidden_layer_num >= 2)
-				hlearn(nn, value_current + alpha * delta, value_current, cfg);
-			ilearn(nn, capa, value_current + alpha * delta, value_current, cfg);
-
-			/*íœƒ‹[ƒ`ƒ“*/
-			if (counter_for_delete % cfg->delete_frequency == 0) {
-				/*íœ‚·‚éƒpƒX‚ğŒˆ’è*/
-				Path *deletePath = select_onePath(tPathL, cfg);
-
-				/*Capa‚©‚çíœ*/
+		for (int job = 1; job < tJobTable[0]; job++) {
+			/*å‰Šé™¤*/
+			while ((endd = End_Search(tJobTable[job], enl, &end, &another)) != NULL) {
+				/*Capaã‹ã‚‰å‰Šé™¤*/
 				for (int i = 0; i < cfg->input_num; i++) {
-					if (agent->route_table->val[deletePath->route_index][i + 2] != 0)
-						capa[i] = capa[i] + agent->route_table->val[deletePath->route_index][i + 2] / agent->channel_num;
+					if (agent->route_table->val[endd->route_index][i + 2] != 0)
+						capa[i] = capa[i] + agent->route_table->val[endd->route_index][i + 2] / agent->channel_num;
 				}
-				/*pathList‚©‚çíœ*/
-				Path_Delete(deletePath, tPathL, cfg);
-				/*ƒg[ƒ^ƒ‹ƒpƒX‚É+1*/
-				path_sum--;
+				/*pathListã‹ã‚‰å‰Šé™¤*/
+				endd->assign = 2;
 			}
 
-			/*ƒgƒ‰ƒtƒBƒbƒN¶¬*/
-			make_traffic(traffic, cfg);
+			/*è¨­ç«‹*/
+			while ((std = New_Search(tJobTable[job], stl, &st, &another)) != NULL) {
+				if ((route_index = select_route(std->src, std->dst, capa,
+					cfg->epsilon, nn, agent, learn_mode, 0, 0, cfg)) = !- 1) {/*Îµâ‚‹Greedyãªé¸æŠ*/
+					escape_flag = 1;//escape;/*brocking*/
+				}
+				/*é †æ–¹å‘ã®è¨ˆç®—*/
+				value_current = forward(nn, capa, cfg);
+
+				/*å‰²å½“*/
+				std->assign = 1;
+				std->route_index = route_index;
+				std->freq = 0;
+				path_sum++;
+				for (int i = 0; i < cfg->input_num; i++)
+					capa[i] = capa[i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//æ¬¡çŠ¶æ…‹å€™è£œ
+				/*é †æ–¹å‘ã®è¨ˆç®—*/
+				value_next = forward(nn, capa, cfg);
+
+				/*ã—ãŸäºŒã¤ã®é †ç•ªã‚’å¤‰ãˆã‚‹nn->hiã®æŒ™å‹•ãŒå¤‰ã‚ã‚Šè‰¯ããªã„ ????è¬ã‚³ãƒ¡ãƒ³ãƒˆ*/
+				if (cfg->reward == 0)
+					reward = get_shortestHop(agent, std->src, std->dst, cfg);
+				else
+					reward = cfg->reward;
+
+				/*å­¦ç¿’ã®æº–å‚™*/
+				double delta;
+				if (cfg->alpha_normalization == 0)
+					delta = reward + cfg->gamma * value_next - value_current;
+				else/*çŠ¶æ…‹ä¾¡å€¤ã§æ­£è¦åŒ–ã™ã‚‹å ´åˆ*/
+					delta = (reward + cfg->gamma * value_next - value_current) / (value_current + 1);
+				e_total += delta * delta;
+				/*Alphaã®æ¸›è¡°*/
+				alpha *= cfg->alpha_attenuation;
+				if (alpha < 0.0001)
+					alpha = 0.0001;
+				/*åæŸå…·åˆã®ãƒ•ã‚¡ã‚¤ãƒ«å‡ºåŠ›*/
+				if (path_sum % 1000 == 0) {
+					fprintf(cfg->accuracy_learn_file, "%lf, %lf\n", e_total / 1000, alpha);
+					e_total = 0;
+				}
+
+				/*å­¦ç¿’*/
+				olearn(nn, value_current + alpha * delta, value_current, cfg);
+				if (cfg->hidden_layer_num >= 2)
+					hlearn(nn, value_current + alpha * delta, value_current, cfg);
+				ilearn(nn, capa, value_current + alpha * delta, value_current, cfg);
+
+			}
+			if (escape_flag == 1)
+				break;
 		}
+		Delete_SortedDemand2(stl);
+		Delete_SortedDemand(enl);
 		free(capa);
 	}
-	PathlDelete(tPathL, cfg);
-	free(traffic);
 }
 
-//ƒpƒ‰ƒ[ƒ^XV‚µ‚È‚¢
+
+
+//ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿æ›´æ–°ã—ãªã„
 double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
-	long int path_sum = 0;
-	int path_num;/*I—¹”»’è—p*/
-	int *traffic = (int*)malloc(2 * sizeof(int));
-	int counter_forDelete = 0;
+	long int path_sum = 0, totalBlockingNum = 0;
 	double **capa;
+	double res_block = 0.0;// (double*)malloc(cfg->evaluate_sim_num * sizeof(double));
 
-	double *capa_total = (double*)malloc(cfg->input_num * sizeof(double));
-	PathList *tPathL;
+	//double *capa_total = (double*)malloc(cfg->input_num * sizeof(double));
 	for (int sim = 0; sim < cfg->evaluate_sim_num; sim++) {
-		tPathL = PathList_New(cfg);
-		path_num = 0;
 
+		Demand *endd, *std;				/*ãƒã‚¤ãƒ³ã‚¿ç”¨*/
+		SortedDemand *stl, *enl;			/*ã‚½ãƒ¼ãƒˆç”¨ãƒ‡ãƒãƒ³ãƒ‰ãƒªã‚¹ãƒˆ*/
+		DemandList *tDemandL = DemandList_New();
+		Make_DemandList(tDemandL, cfg->flu_proportion, cfg);/*ãƒ‡ãƒãƒ³ãƒ‰ã®ç”Ÿæˆ*/
+		/* é–‹å§‹æ™‚åˆ»é †ã«ã‚½ãƒ¼ãƒˆ */
+		stl = SortedDemand_New(tDemandL);
+		Put_Start_Time_To_SortIdx(stl);
+		Sort_Demand_Index_Small(stl);
+		/* çµ‚äº†æ™‚åˆ»é †ã«ã‚½ãƒ¼ãƒˆ */
+		enl = SortedDemand_New(tDemandL);
+		Put_End_Time_To_SortIdx(enl);
+		Sort_Demand_Index_Small(enl);
+		short *tJobTable = compress_DemandL(stl, enl, cfg);/*ç„¡é§„ãªæ™‚é–“ã‚’ãªãã™ãŸã‚ã€ã‚¸ãƒ§ãƒ–ã®ãªã„æ™‚é–“ã¯èµ°æŸ»ã—ãªã„*/
+
+		path_sum += tDemandL->dmnd_num;
+		int end = 0, st = 0, another = 0;
+		int blocking_num = 0, path_num = 0;;
 		capa = (double**)malloc(cfg->freq_num * sizeof(double*));
 		for (int freq = 0; freq < cfg->freq_num; freq++) {
 			capa[freq] = (double*)malloc(cfg->input_num * sizeof(double));
 			for (int i = 0; i < cfg->input_num; i++)
-				capa[freq][i] = 1;// /*agent->fiber_data->val[i][0]*/ / cfg->max_fiber_num;
+				capa[freq][i] = 1;
+		}
+		for (int job = 1; job < tJobTable[0]; job++) {
+
+			/*å‰Šé™¤*/
+			while ((endd = End_Search(tJobTable[job], enl, &end, &another)) != NULL) {
+				/*Capaã‹ã‚‰å‰Šé™¤*/
+				for (int i = 0; i < cfg->input_num; i++) {
+					if (agent->route_table->val[endd->route_index][i + 2] != 0)
+						capa[endd->freq][i] = capa[endd->freq][i] + agent->route_table->val[endd->route_index][i + 2] / agent->channel_num;
+				}
+				/*pathListã‹ã‚‰å‰Šé™¤*/
+				endd->assign = 2;
+			}
+
+			/*è¨­ç«‹*/
+			while ((std = New_Search(tJobTable[job], stl, &st, &another)) != NULL) {
+				select_freq(std, capa, nn, agent, mode_forDicision, cfg);
+				if (std->assign == 5) {//å‰²å½“ãŒã§ããªããªã‚‹ã¾ã§
+					blocking_num++;/*ãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°*/
+					continue;
+				}
+				/*å‰²å½“*/
+				for (int i = 0; i < cfg->input_num; i++)
+					capa[std->freq][i] = capa[std->freq][i] - agent->route_table->val[std->route_index][i + 2] / agent->channel_num;
+
+			}
 		}
 
-		/*ƒgƒ‰ƒtƒBƒbƒN¶¬*/
-		make_traffic(traffic, cfg);
-		int blocking_num = 0;
-		while (true) {
-			if ((select_freq(traffic[0], traffic[1], capa, nn, agent, tPathL, mode_forDicision, cfg)) == NULL) {//Š„“–‚ª‚Å‚«‚È‚­‚È‚é‚Ü‚Å
-				blocking_num++;/*ƒuƒƒbƒLƒ“ƒO*/
-				if (blocking_num >= 1 + path_num / 100)/*I—¹”»’è*/
-					break;
-				make_traffic(traffic, cfg);
-				continue;
-			}
-			counter_forDelete++;
-
-			/*ƒtƒ@ƒCƒ‹o—Í@ƒfƒoƒbƒO—p*/
-			if (cfg->output_capacity_graph == 1) {
-				for (int i = 0; i < cfg->input_num; i++) {
-					capa_total[i] = 0;
-					for (int freq = 0; freq < cfg->freq_num; freq++)
-						capa_total[i] += capa[freq][i];
-				}
-				if (sim == 0) {
-					for (int i = 0; i < cfg->input_num; i++)
-						fprintf(cfg->capacity_transition_file, "%lf,", capa_total[i]);
-					fprintf(cfg->capacity_transition_file, "\n");
-				}
-			}
-
-
-			/*íœƒ‹[ƒ`ƒ“*/
-			if (counter_forDelete % cfg->delete_frequency == 0) {
-				/*íœ‚·‚éƒpƒXi‰½”Ô–Ú‚©j‚ğŒˆ’è*/
-				Path *deletePath = select_onePath(tPathL, cfg);
-
-				/*Capa‚©‚çíœ*/
-				for (int i = 0; i < cfg->input_num; i++) {
-					if (agent->route_table->val[deletePath->route_index][i + 2] != 0)
-						capa[deletePath->freq][i] = capa[deletePath->freq][i] + agent->route_table->val[deletePath->route_index][i + 2] / agent->channel_num;
-				}
-				/*pathList‚©‚çíœ*/
-				Path_Delete(deletePath, tPathL, cfg);
-			}
-			else {
-				path_sum++;
-				path_num++;
-			}
-			make_traffic(traffic, cfg);
-		}
-		PathlDelete(tPathL, cfg);
+		totalBlockingNum += blocking_num;
+		/*capaã€€ç‰‡ä»˜ã‘*/
+		for (int i = 0; i < cfg->freq_num; i++)
+			free(capa[i]);
+		free(capa);
+		Delete_SortedDemand2(stl);
+		Delete_SortedDemand(enl);
 	}
-	free(traffic);
-	/*‰æ–Êo—Í*/
-	if (cfg->outputStatus == 1)printf("path -> %lf\n", (double)path_sum / cfg->evaluate_sim_num);
-	return (double)path_sum / cfg->evaluate_sim_num;
+	/*ç”»é¢å‡ºåŠ›*/
+	if (cfg->outputStatus == 1)printf("blocking_rate -> %lf\n", (double)totalBlockingNum / path_sum);
+	return (double)totalBlockingNum / path_sum;
 
 }
 
 
-
 /*
-Ÿ‚Ìó‘Ô‚ğ“¾‚éŠÖ”
+æ¬¡ã®çŠ¶æ…‹ã‚’å¾—ã‚‹é–¢æ•°
 option:
-epsilon ƒÃƒOƒŠ[ƒfƒB[–@‚ÌƒÃ
-mode_forDicision 0:NN‚Ì‰¿’l‚ÌÅ‘å’lA1:Å’ZŒo˜H‚©‚çFFA2: c—]—e—Êƒ_ƒCƒNƒXƒgƒ‰
-output_flag •]‰¿‚ğs‚¤(evaluate)Aoutput_flag‚ªƒIƒ“‚Ì,action_process.csv ƒtƒ@ƒCƒ‹‚Éo—Í‚·‚é
+epsilon Îµã‚°ãƒªãƒ¼ãƒ‡ã‚£ãƒ¼æ³•ã®Îµ
+mode_forDicision 0:NNã®ä¾¡å€¤ã®æœ€å¤§å€¤ã€1:æœ€çŸ­çµŒè·¯ã‹ã‚‰FFã€2: æ®‹ä½™å®¹é‡ãƒ€ã‚¤ã‚¯ã‚¹ãƒˆãƒ©
+output_flag è©•ä¾¡ã‚’è¡Œã†æ™‚(evaluate)ã€output_flagãŒã‚ªãƒ³ã®æ™‚,action_process.csv ãƒ•ã‚¡ã‚¤ãƒ«ã«å‡ºåŠ›ã™ã‚‹
 */
 int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent, int mode_forDicision, int output_flag, int route_counter, Config *cfg) {
 	int routing_candidate_counter = cfg->route_k;
-	int route_index = 0;/*capa_copy‚Ég‚¤index Œo˜HŒó•â‚ğŠÇ—‚·‚é*/
-	int max_value_index = -1;/*‰¿’lÅ‘å‚Æ‚È‚és“®‚Ìindex*/
-	double max_value = -100000.0;/*‰¿’lÅ‘å‚Æ‚È‚és“®‚Ì‰¿’l*/
-	int escape_flag = 0;/*‚ ‚é‚P‚Â‚ÌŒo˜HŒó•â‚É‚¨‚¢‚Ä‹ó‚«‚ª‚È‚©‚Á‚½‚É‘¬‚â‚©‚É‘¼‚ÌŒo˜HŒó•â‚ÖˆÚ“®‚·‚é‚½‚ß‚Ìƒtƒ‰ƒO*/
-	int existing_flag = 0;/*‘S‚Ä‚ÌŒo˜HH–@‚É‚¨‚¢‚ÄŠ„“–‰Â”\‚ÈƒpƒX‚ªˆê‚Â‚à‚È‚¢@ƒuƒƒbƒN‚µAŠÖ”‚©‚ço‚é‚½‚ß‚Ìƒtƒ‰ƒO*/
-	int shortest_index = 0;/*option‚Ìshortest_route_only‚ğs‚¤‚½‚ß‚É•Û‚µ‚Ä‚¨‚­*/
+	int route_index = 0;/*capa_copyã«ä½¿ã†index çµŒè·¯å€™è£œã‚’ç®¡ç†ã™ã‚‹*/
+	int max_value_index = -1;/*ä¾¡å€¤æœ€å¤§ã¨ãªã‚‹è¡Œå‹•ã®index*/
+	double max_value = -100000.0;/*ä¾¡å€¤æœ€å¤§ã¨ãªã‚‹è¡Œå‹•ã®ä¾¡å€¤*/
+	int escape_flag = 0;/*ã‚ã‚‹ï¼‘ã¤ã®çµŒè·¯å€™è£œã«ãŠã„ã¦ç©ºããŒãªã‹ã£ãŸæ™‚ã«é€Ÿã‚„ã‹ã«ä»–ã®çµŒè·¯å€™è£œã¸ç§»å‹•ã™ã‚‹ãŸã‚ã®ãƒ•ãƒ©ã‚°*/
+	int existing_flag = 0;/*å…¨ã¦ã®çµŒè·¯å·¥æ³•ã«ãŠã„ã¦å‰²å½“å¯èƒ½ãªãƒ‘ã‚¹ãŒä¸€ã¤ã‚‚ãªã„æ™‚ã€€ãƒ–ãƒ­ãƒƒã‚¯ã—ã€é–¢æ•°ã‹ã‚‰å‡ºã‚‹ãŸã‚ã®ãƒ•ãƒ©ã‚°*/
+	int shortest_index = 0;/*optionã®shortest_route_onlyã‚’è¡Œã†ãŸã‚ã«ä¿æŒã—ã¦ãŠã*/
 	int shortest_hop = 100;
 
 	/*route_select*/
 	double *route_value_list = (double*)calloc(cfg->route_k, sizeof(double));
 
 
-	/*‚¨‚µ@random‘I‘ğ—p‚Ì”z—ñ
-	0‚ÌƒŠƒ“ƒN‚ÍŠ„‚è“–‚Ä•s‰ÂŒo˜H
+	/*ãŠè©¦ã—ã€€randomé¸æŠç”¨ã®é…åˆ—
+	0ã®ãƒªãƒ³ã‚¯ã¯å‰²ã‚Šå½“ã¦ä¸å¯çµŒè·¯
 	*/
 	int *for_random_select = (int*)calloc(cfg->route_k, sizeof(int));//one-hot
 
-	double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));//ÅŒã‚Ì—v‘f‚Íƒzƒbƒv”
+	double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));//æœ€å¾Œã®è¦ç´ ã¯ãƒ›ãƒƒãƒ—æ•°
 
-																		   /*Routeƒtƒ@ƒCƒ‹‚É‚¨‚¯‚éA—v‹‚³‚ê‚énI’[‚ğ‚ÂŒo˜H‚ğ‚»‚ê‚¼‚ê‚Å‰¿’l”»’è‚ğs‚¤*/
-	for (int table_index = agent->route_table_index[s][d]; table_index < agent->route_table_index[s][d] + cfg->route_k; table_index++) {//‚·‚×‚Ä‚Ìs“®‘I‘ğˆ‚ğ”äŠr‚µ‚Ä‘I‘ğ‚·‚é
+																		   /*Routeãƒ•ã‚¡ã‚¤ãƒ«ã«ãŠã‘ã‚‹ã€è¦æ±‚ã•ã‚Œã‚‹å§‹çµ‚ç«¯ã‚’æŒã¤çµŒè·¯ã‚’ãã‚Œãã‚Œã§ä¾¡å€¤åˆ¤å®šã‚’è¡Œã†*/
+	for (int table_index = agent->route_table_index[s][d]; table_index < agent->route_table_index[s][d] + cfg->route_k; table_index++) {//ã™ã¹ã¦ã®è¡Œå‹•é¸æŠè‚¢ã‚’æ¯”è¼ƒã—ã¦é¸æŠã™ã‚‹
 		if (table_index >= agent->route_table->col_num)
 			break;
 		if (agent->route_table->val[table_index][0] != s || agent->route_table->val[table_index][1] != d)
@@ -230,9 +238,9 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 
 		int hop = 0;
 		for (int i = 0; i < cfg->input_num; i++) {
-			hop += agent->route_table->val[table_index][i + 2];//ƒzƒbƒv”ƒJƒEƒ“ƒg
-			capa_tmp[i] = capa[i] - agent->route_table->val[table_index][i + 2] / agent->channel_num;//Ÿó‘ÔŒó•â
-			if (capa_tmp[i] < 0) {/*Š„‚è“–‚Ä‰Â”\‚© ƒ`ƒFƒbƒN*/
+			hop += agent->route_table->val[table_index][i + 2];//ãƒ›ãƒƒãƒ—æ•°ã‚«ã‚¦ãƒ³ãƒˆ
+			capa_tmp[i] = capa[i] - agent->route_table->val[table_index][i + 2] / agent->channel_num;//æ¬¡çŠ¶æ…‹å€™è£œ
+			if (capa_tmp[i] < 0) {/*å‰²ã‚Šå½“ã¦å¯èƒ½ã‹ ãƒã‚§ãƒƒã‚¯*/
 				escape_flag = 1;
 				route_value_list[route_index] = -99999;
 				route_index++;
@@ -240,35 +248,35 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 			}
 		}
 
-		if (escape_flag == 1) {/*Š„‚è“–‚Ä•s”\‚Ìê‡@•ÊŒo˜H’Tõ*/
+		if (escape_flag == 1) {/*å‰²ã‚Šå½“ã¦ä¸èƒ½ã®å ´åˆã€€åˆ¥çµŒè·¯æ¢ç´¢*/
 			routing_candidate_counter--;
 			escape_flag = 0;
 			continue;
 		}
-		/*‚»‚ÌrouteID‚ÉŠ„‚è“–‚Ä‰Â”\*/
+		/*ãã®routeIDã«å‰²ã‚Šå½“ã¦å¯èƒ½*/
 		for_random_select[route_index]++;
 
-		/*‘S‚Ä‚ÌŒo˜HŒó•â‚É‚¨‚¢‚Ä@‚Ç‚ê‚©ˆê‚Â‚Å‚àŠ„‚è“–‚Ä‚ª‰Â”\‚©*/
+		/*å…¨ã¦ã®çµŒè·¯å€™è£œã«ãŠã„ã¦ã€€ã©ã‚Œã‹ä¸€ã¤ã§ã‚‚å‰²ã‚Šå½“ã¦ãŒå¯èƒ½ã‹*/
 		if (existing_flag == 0) {
 			existing_flag = 1;
 			max_value_index = route_index;
 		}
 
-		/*FirstFit‚É‘I‘ğ*/
+		/*FirstFitã«é¸æŠ*/
 		route_value_list[route_index] = (cfg->route_k - route_index) - hop * 30;
 
 
-		/*‰¿’l”»’è*/
+		/*ä¾¡å€¤åˆ¤å®š*/
 		double res_tmp = 0;
 		if (mode_forDicision == 0)//NN
 			res_tmp = forward(nn, capa_tmp, cfg);
-		else if (mode_forDicision == 2)//c—]—e—Êƒ_ƒCƒNƒXƒgƒ‰
+		else if (mode_forDicision == 2)//æ®‹ä½™å®¹é‡ãƒ€ã‚¤ã‚¯ã‚¹ãƒˆãƒ©
 			res_tmp = get_value_dijkstra(capa_tmp, agent->route_table->val[table_index], cfg);
 
 		route_value_list[route_index] = res_tmp;
 
 
-		//Å‘å‚©‚Ç‚¤‚©‚ğ”»’è
+		//æœ€å¤§ã‹ã©ã†ã‹ã‚’åˆ¤å®š
 		if (res_tmp > max_value) {
 			max_value = res_tmp;
 			max_value_index = route_index;
@@ -277,21 +285,21 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 		route_index++;
 
 	}
-	/*Š„‚è“–‚ÄŒó•â‚ªˆê‚Â‚à‚È‚¢*/
+	/*å‰²ã‚Šå½“ã¦å€™è£œãŒä¸€ã¤ã‚‚ãªã„*/
 	if (existing_flag == 0) {//cfg->max_or_min == 0 && output_value == -1000.0 || cfg->max_or_min != 0 && output_value == 1000.0 ||
-		//•Ğ•t‚¯
+		//ç‰‡ä»˜ã‘
 		free(capa_tmp);
 		free(for_random_select);
 		return -1;
 	}
 	int output_index = 0;
 
-	/*ƒÃƒOƒŠ[ƒfƒB[–@‚ğs‚¤*/
+	/*Îµã‚°ãƒªãƒ¼ãƒ‡ã‚£ãƒ¼æ³•ã‚’è¡Œã†*/
 	int b = rand();
 	float a = (float)b / 32767;
 
 	if (epsilon <= a) { //greedy
-		/*route_counter”Ô–Ú‚ÌŒo˜H‚ÌŒo˜H”Ô†‚ğo—Í*/
+		/*route_counterç•ªç›®ã®çµŒè·¯ã®çµŒè·¯ç•ªå·ã‚’å‡ºåŠ›*/
 		for (int i_flag = 0; i_flag < route_counter - 1; i_flag++) {
 			int max_route_value = 0;
 			int max_route_index_t = -1;
@@ -324,82 +332,38 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 }
 
 /*
-Ÿ‚Ìó‘Ô‚ğ“¾‚éŠÖ”
-Evaluate‚Å—˜—p
-Še”g’·ƒŒƒCƒ„‚É‚¨‚¢‚Äselect_route‚É‚æ‚èŒo˜H‘I‘ğ‚µ‚½‚Ì‚¿@Å‘å‰¿’l‚Æ‚È‚é”g’·‚ğ‘I‘ğ‚·‚é
+æ¬¡ã®çŠ¶æ…‹ã‚’å¾—ã‚‹é–¢æ•°
+Evaluateã§åˆ©ç”¨
+å„æ³¢é•·ãƒ¬ã‚¤ãƒ¤ã«ãŠã„ã¦select_routeã«ã‚ˆã‚ŠçµŒè·¯é¸æŠã—ãŸã®ã¡ã€€æœ€å¤§ä¾¡å€¤ã¨ãªã‚‹æ³¢é•·ã‚’é¸æŠã™ã‚‹
 option:
-epsilon ƒÃƒOƒŠ[ƒfƒB[–@‚ÌƒÃ
-mode_forDicision 0:NN‚Ì‰¿’l‚ÌÅ‘å’lA1:Å’ZŒo˜H‚©‚çFFA2: c—]—e—Êƒ_ƒCƒNƒXƒgƒ‰
-output_flag •]‰¿‚ğs‚¤(evaluate)Aoutput_flag‚ªƒIƒ“‚Ì,action_process.csv ƒtƒ@ƒCƒ‹‚Éo—Í‚·‚é
+epsilon Îµã‚°ãƒªãƒ¼ãƒ‡ã‚£ãƒ¼æ³•ã®Îµ
+mode_forDicision 0:NNã®ä¾¡å€¤ã®æœ€å¤§å€¤ã€1:æœ€çŸ­çµŒè·¯ã‹ã‚‰FFã€2: æ®‹ä½™å®¹é‡ãƒ€ã‚¤ã‚¯ã‚¹ãƒˆãƒ©
+output_flag è©•ä¾¡ã‚’è¡Œã†æ™‚(evaluate)ã€output_flagãŒã‚ªãƒ³ã®æ™‚,action_process.csv ãƒ•ã‚¡ã‚¤ãƒ«ã«å‡ºåŠ›ã™ã‚‹
 */
-double **select_freq(int s, int d, double **capa, NN *nn, Agent *agent, PathList *path_list, int mode_forDicision, Config *cfg) {
+void select_freq(Demand *aDemand, double **capa, NN *nn, Agent *agent, int mode_forDicision, Config *cfg) {
 
 
-	if (cfg->select_priority == 0) {
-		double min_value = 1000000, max_value = -1000000, value;
-		double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));
-		int target_freq = -1, route_index = -1, target_route_index = -1;
-		for (int freq = 0; freq < cfg->freq_num; freq++) {
-			double value_current = forward(nn, capa[freq], cfg);
-			/*‚±‚Ì”g’·‚ÉŠ„‚è“–‚Ä‰Â”\‚©*/
-			if ((route_index = select_route(s, d, capa[freq], 0, nn, agent, mode_forDicision, 0, 0, cfg)) == -1)
-				continue;
-			/*FF•ƒ_ƒCƒNƒXƒgƒ‰@-@Š„“–‰Â”\”g’·‚ªŒ©‚Â‚©‚ê‚Î‚·‚®Š„‚è“–‚é*/
-			if (mode_forDicision == 1 || mode_forDicision == 2) {
-				target_route_index = route_index;
-				target_freq = freq;
-				break;
-			}
-			for (int i = 0; i < cfg->input_num; i++) {
-				capa_tmp[i] = capa[freq][i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//Ÿó‘ÔŒó•â
-			}
-			/*‰¿’l‚ÌÅ‘å‚ğ‘I‘ğ*/
-			if (cfg->selectFreq_mode == 0) {
-				value = forward(nn, capa_tmp, cfg);
-				if (max_value < value) {
-					max_value = value;
-					target_freq = freq;
-					target_route_index = route_index;
-				}
-			}
-			else {/*‰¿’l‚Ì’áŒ¸‚ÌÅ¬‚ğ‘I‘ğ*/
-				value = value_current - forward(nn, capa_tmp, cfg);
-				if (min_value > value) {
-					min_value = value;
-					target_freq = freq;
-					target_route_index = route_index;
-				}
-			}
-		}
-		free(capa_tmp);
-		if (target_freq == -1)
-			return NULL;
-		/*Š„“–*/
-		Path_Add(s, d, target_freq, target_route_index, path_list, cfg);
-		for (int i = 0; i < cfg->input_num; i++)
-			capa[target_freq][i] = capa[target_freq][i] - agent->route_table->val[target_route_index][i + 2] / agent->channel_num;
-		return capa;
-	}
-	else {/*Œo˜H‚ğ‘I‘ğ‚µ‚ÄA”g’·‚ÍŒã‚©‚çŒˆ‚ß‚é*/
+	int route_index = -1, target_route_index = -1;
+	if (cfg->select_priority == 1) {
+
+		/*capa_totalã®ä½œæˆ*/
 		double *capa_total = (double*)malloc(cfg->input_num * sizeof(double));
-		/*capa_total‚Ìì¬*/
 		for (int i = 0; i < cfg->input_num; i++) {
 			capa_total[i] = 0;
 			for (int freq = 0; freq < cfg->freq_num; freq++)
 				capa_total[i] += capa[freq][i];
 			capa_total[i] = capa_total[i] / agent->channel_num;
 		}
+
 		for (int route = 0; route < cfg->route_k; route++) {
-			if (route == 1)
-				int y = 0;
-			/*Œo˜H‚Ì‘I‘ğ*/
-			int target_route_index = select_route(s, d, capa_total, cfg->epsilon, nn, agent, mode_forDicision, 0, route, cfg);
+			/*çµŒè·¯ã®é¸æŠ*/
+			int target_route_index = select_route(aDemand->src, aDemand->dst, capa_total, cfg->epsilon, nn, agent, mode_forDicision, 0, route, cfg);
 			if (target_route_index == -1)
 				continue;
-			/*‚·‚×‚Ä‚Ì”g’·‚ÅFF*/
+			/*ã™ã¹ã¦ã®æ³¢é•·ã§FF*/
 			for (int freq = 0; freq < cfg->freq_num; freq++) {
 				int escape_flag = 0;
-				/*Š„‚è“–‚Ä‰Â”\‚©‚Ì”»’è*/
+				/*å‰²ã‚Šå½“ã¦å¯èƒ½ã‹ã®åˆ¤å®š*/
 				for (int i = 0; i < cfg->input_num; i++) {
 					if (capa[freq][i] < agent->route_table->val[target_route_index][i + 2] / agent->channel_num) {
 						escape_flag = 1;
@@ -409,20 +373,69 @@ double **select_freq(int s, int d, double **capa, NN *nn, Agent *agent, PathList
 				if (escape_flag == 1)
 					continue;
 
-				/*Š„“–*/
-				Path_Add(s, d, freq, target_route_index, path_list, cfg);
-				for (int i = 0; i < cfg->input_num; i++)
-					capa[freq][i] = capa[freq][i] - agent->route_table->val[target_route_index][i + 2] / agent->channel_num;
-				return capa;
-
+				/*å‰²å½“*/
+				aDemand->assign = 1;
+				aDemand->freq = freq;
+				aDemand->route_index = route_index;
+				free(capa_total);
+				return;
 			}
 		}
-		return NULL;
-
+		/*ãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°*/
+		aDemand->assign = 5;
+		free(capa_total);
+		return;
 	}
+	else {/*å„æ³¢é•·ã§çµŒè·¯æ¢ç´¢*/
 
+		int target_freq = -1;
+		double min_value = 1000000, max_value = -1000000, value;
+		double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));
+		for (int freq = 0; freq < cfg->freq_num; freq++) {
+			double value_current = forward(nn, capa[freq], cfg);
+			/*ã“ã®æ³¢é•·ã«å‰²ã‚Šå½“ã¦å¯èƒ½ã‹*/
+			if ((route_index = select_route(aDemand->src, aDemand->dst, capa[freq], 0, nn, agent, mode_forDicision, 0, 0, cfg)) == -1)
+				continue;
+			/*FFï¼†ãƒ€ã‚¤ã‚¯ã‚¹ãƒˆãƒ©ã€€-ã€€å‰²å½“å¯èƒ½æ³¢é•·ãŒè¦‹ã¤ã‹ã‚Œã°ã™ãå‰²ã‚Šå½“ã‚‹*/
+			if (mode_forDicision == 1 || mode_forDicision == 2) {
+				target_route_index = route_index;
+				target_freq = freq;
+				break;
+			}
+			for (int i = 0; i < cfg->input_num; i++) {
+				capa_tmp[i] = capa[freq][i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//æ¬¡çŠ¶æ…‹å€™è£œ
+			}
+			/*ä¾¡å€¤ã®æœ€å¤§ã‚’é¸æŠ*/
+			if (cfg->selectFreq_mode == 0) {
+				value = forward(nn, capa_tmp, cfg);
+				if (max_value < value) {
+					max_value = value;
+					target_freq = freq;
+					target_route_index = route_index;
+				}
+			}
+			else {/*ä¾¡å€¤ã®ä½æ¸›ã®æœ€å°ã‚’é¸æŠ*/
+				value = value_current - forward(nn, capa_tmp, cfg);
+				if (min_value > value) {
+					min_value = value;
+					target_freq = freq;
+					target_route_index = route_index;
+				}
+			}
+		}
+		free(capa_tmp);
+		if (target_freq == -1) {/*ãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°*/
+			aDemand->assign = 5;
+			return;
+		}
+		/*å‰²å½“*/
+		//Path_Add(aDemand->src, aDemand->dst, target_freq, target_route_index, cfg);
+		aDemand->assign = 1;
+		aDemand->freq = target_freq;
+		aDemand->route_index = target_route_index;
+		return;
+	}
 }
-
 
 
 double get_value_dijkstra(double *capa, double *route, Config *cfg) {
@@ -465,7 +478,7 @@ struct MATRIX *reduce_routeCandidate(MATRIX *route_table, Config *cfg) {
 		return route_table;
 
 	/*make_matrix*/
-	/*‚¢‚Á‚½‚ñtmp_mtxã‚Éì¬@ƒ}ƒgƒŠƒbƒNƒXƒTƒCƒY‚ª—\‘z‚Å‚«‚È‚¢‚½‚ß*/
+	/*ã„ã£ãŸã‚“tmp_mtxä¸Šã«ä½œæˆã€€ãƒãƒˆãƒªãƒƒã‚¯ã‚¹ã‚µã‚¤ã‚ºãŒäºˆæƒ³ã§ããªã„ãŸã‚*/
 	MATRIX *tmp_mtx = (MATRIX *)calloc(1, sizeof(MATRIX));
 	MATRIX *res_mtx = (MATRIX *)calloc(1, sizeof(MATRIX));
 	tmp_mtx->row_num = route_table->row_num;

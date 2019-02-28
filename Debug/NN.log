@@ -1,13 +1,2 @@
-﻿  agent.cpp
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(51): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(67): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(32): warning C4101: 'train_time': ローカル変数は 1 度も使われていません。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(233): warning C4244: '+=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(301): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(311): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(399): warning C4244: '+=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(408): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(409): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(410): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-  NN.vcxproj -> C:\Users\SHIRAKI2\Desktop\NN_26\Debug\NN.exe
+﻿  NN.vcxproj -> C:\Users\SHIRAKI2\Desktop\NN_26\Debug\NN.exe
   NN.vcxproj -> C:\Users\SHIRAKI2\Desktop\NN_26\Debug\NN.pdb (Partial PDB)

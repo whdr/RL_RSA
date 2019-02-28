@@ -33,6 +33,11 @@ Config *Config_new(const char *config) {
 	cfg->selectFreq_mode = ConfigFileReader_get_int(cfr, "SELECTFREQ_MODE");
 	cfg->select_priority = ConfigFileReader_get_int(cfr, "SELECT_PRIORITY");
 
+	/*動的*/
+	cfg->time = ConfigFileReader_get_int(cfr, "PATH_TIME");/*実験時間*/
+	cfg->real_time = ConfigFileReader_get_int(cfr, "REAL_TIME");/*測定開始時間*/
+	cfg->flu_proportion = ConfigFileReader_get_double(cfr, "FLU_PROPORTION");/*初期トラフィック期待値の変動割合*/
+
 
 	/*トラフィックConfig*/
 	cfg->demand_pattern = ConfigFileReader_get_int(cfr, "DEMAND_PATTERN");

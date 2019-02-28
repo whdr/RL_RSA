@@ -5,6 +5,7 @@
 #include <assert.h>
 #include "NN.h"
 #include "path.h"
+#include "demand.h"
 #define MAIN_LEARN 0
 #define SHORTEST_ONLY 1
 #define INITIAL_LEARN 2
@@ -12,7 +13,7 @@
 
 typedef struct Agent {
 
-	int *shortest_path_num;/*最短経路が選ばれた回数*/
+	int *shortest_job_num;/*最短経路が選ばれた回数*/
 	int channel_num;/*train_dataのdecode用　リンクキャパシティを1で正規化するため*/
 	int **route_table_index;/*経路候補テーブル読み取り時、探索範囲を狭めるために利用*/
 
@@ -30,4 +31,4 @@ int get_shortestHop(Agent *agent, int s, int d, Config *cfg);
 void make_routeTableIndex(MATRIX *route_table, int **route_table_index, Config *cfg);
 struct MATRIX *reduce_routeCandidate(MATRIX *route_table, Config *cfg);
 void make_traffic(int *traffic, Config *cfg);
-double **select_freq(int s, int d, double **capa, NN *nn, Agent *agent, PathList *path_list, int mode_forDicision, Config *cfg);
+void select_freq(Demand *aDemand, double **capa, NN *nn, Agent *agent, int mode_forDicision, Config *cfg);

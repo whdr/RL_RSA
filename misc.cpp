@@ -62,32 +62,32 @@ void free_nullcheck_(void *x, const char *f, int l)
 
 
 /*チェックつきファイルオープン*/
-FILE *fopen_errorcheck(const char *path, const char *mode)
+FILE *fopen_errorcheck(const char *job, const char *mode)
 {
-	FILE *fp = fopen(path, mode);
+	FILE *fp = fopen(job, mode);
 	if (fp == NULL) {
-		fprintf(stderr, "fopen error: %s\n", path);
+		fprintf(stderr, "fopen error: %s\n", job);
 		exit(EXIT_FAILURE);
 	}
 	return fp;
 }
 /* ファイルが開けないときはNULLをreturen(小川static_design用) */
-FILE *fopen_no_errorcheck(const char *path, const char *mode)
+FILE *fopen_no_errorcheck(const char *job, const char *mode)
 {
-	FILE *fp = fopen(path, mode);
+	FILE *fp = fopen(job, mode);
 	return fp;
 }
 
 /*ディレクトリ指定機能つきチェックつきファイルオープン*/
-FILE *fopen_errorcheck2(const char *path, const char *mode, char *dir)
+FILE *fopen_errorcheck2(const char *job, const char *mode, char *dir)
 {
 	FILE *fp;
-	char *tmp = (char *)calloc_errorcheck(strlen(path) + strlen(dir) + 1, sizeof(char));
+	char *tmp = (char *)calloc_errorcheck(strlen(job) + strlen(dir) + 1, sizeof(char));
 	strcpy(tmp, dir);
-	strcat(tmp, path);
+	strcat(tmp, job);
 	fp = fopen(tmp, mode);
 	if (fp == NULL) {
-		fprintf(stderr, "fopen error: %s%s\n", dir, path);
+		fprintf(stderr, "fopen error: %s%s\n", dir, job);
 		exit(EXIT_FAILURE);
 	}
 	free_nullcheck(tmp);
@@ -95,19 +95,19 @@ FILE *fopen_errorcheck2(const char *path, const char *mode, char *dir)
 }
 
 /*連番機能つきチェックつきファイルオープン*/
-FILE *fopen_errorcheck3(const char *path, const char *mode, int idx, char *extensions)
+FILE *fopen_errorcheck3(const char *job, const char *mode, int idx, char *extensions)
 {
 	FILE *fp;
 	char *idx_c = (char *)calloc_errorcheck(strlen("64") + 1, sizeof(char));
-	char *tmp = (char *)calloc_errorcheck(strlen(path) + strlen("64") + strlen(extensions) + 1, sizeof(char));
+	char *tmp = (char *)calloc_errorcheck(strlen(job) + strlen("64") + strlen(extensions) + 1, sizeof(char));
 	sprintf(idx_c, "%.2d", idx);
 
-	strcpy(tmp, path);
+	strcpy(tmp, job);
 	strcat(tmp, idx_c);
 	strcat(tmp, extensions);
 	fp = fopen(tmp, mode);
 	if (fp == NULL) {
-		fprintf(stderr, "fopen error : %s%s%s\n", path, idx_c, extensions);
+		fprintf(stderr, "fopen error : %s%s%s\n", job, idx_c, extensions);
 		exit(EXIT_FAILURE);
 	}
 	free_nullcheck(tmp);

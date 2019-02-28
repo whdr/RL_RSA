@@ -173,10 +173,10 @@ int main(int argc, const char *argv[]) {
 		/*重みの初期化*/
 		init_NN(nn, cfg);
 		if (cfg->outputStatus == 1)printf("NN         - ");
-		learn(nn, agent, MAIN_LEARN, cfg);		/*本学習*/
+		//learn(nn, agent, MAIN_LEARN, cfg);		/*本学習*/
 		tmp_NN = evaluate(agent, nn, 0, cfg);
 		if (cfg->outputStatus == 0)printf("%d, %.3lf\n", sim, tmp_NN);
-		if (res_NN < tmp_NN) {
+		if (res_NN > tmp_NN) {
 			res_NN = tmp_NN;
 			NN_copy(nn, nn_save, cfg);
 		}
@@ -202,13 +202,13 @@ int main(int argc, const char *argv[]) {
 	/*出力*/
 	if (cfg->outputStatus == 1)printf("random        - %.3lf\ninitial_learn - %.3lf\nmain_learn    - %.3lf\nconvention    - %.3lf\n", res_before / cfg->sim_num, res_initial / cfg->sim_num, res_NN, res_conv);
 	else {
-		fprintf(stderr, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d,"
-			, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate);
+		fprintf(stderr, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d, %d, "
+			, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->delete_frequency);
 		fprintf(stderr, "%.1lf, %.1lf, %.1lf, %.3lf, %.3lf, %.3lf\n"
 			, res_conv, res_dijk, res_NN, res_dijk / res_conv, res_NN / res_conv, res_NN / res_dijk);
 	}
-	fprintf(cfg->output_file, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d,"
-		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate);
+	fprintf(cfg->output_file, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d, %d, "
+		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->delete_frequency);
 	fprintf(cfg->output_file, "%.3lf, %.3lf, %.3lf, %lf, %lf, %lf\n"
 		, res_conv, res_dijk, res_NN, res_dijk / res_conv, res_NN / res_conv, res_NN / res_dijk);
 

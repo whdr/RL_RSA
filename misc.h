@@ -14,13 +14,13 @@
 
 /* #include "memory_leak.h" */
 
-FILE *fopen_errorcheck(const char *path, const char *mode);
+FILE *fopen_errorcheck(const char *job, const char *mode);
 /*ディレクトリ指定機能付きfopen_check*/
-FILE *fopen_errorcheck2(const char *path, const char *mode, char *dir);
+FILE *fopen_errorcheck2(const char *job, const char *mode, char *dir);
 /* ファイルが開けないときはNULLをreturen(小川static_design用) */
-FILE *fopen_no_errorcheck(const char *path, const char *mode);
+FILE *fopen_no_errorcheck(const char *job, const char *mode);
 /*連番機能つき*/
-FILE *fopen_errorcheck3(const char *path, const char *mode, int idx, char *extensions);
+FILE *fopen_errorcheck3(const char *job, const char *mode, int idx, char *extensions);
 /* 改行コード変換機能つきfgets */
 char *fgets_bin(char *s, int size, FILE *stream);
 int fseek_errorcheck(FILE *stream, long offset, int whence);

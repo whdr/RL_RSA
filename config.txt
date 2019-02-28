@@ -9,6 +9,8 @@ ROUTE_CANDIDATE=100
 LIMIT_BLOCK_NUM=10
 #波長割り当ての際、価値最大の選択(0)か、価値の低減が最小を選択(1)
 SELECTFREQ_MODE=0
+#各波長で経路探索するのか(0)、全体の容量から経路を選択して波長割り当てをするのか(1)
+SELECT_PRIORITY=0
 
 #Fiber (0: 一様配置、1: ununi)
 FIBER_DISTRIBUTION=0
@@ -17,9 +19,14 @@ FREQ_NUM=5
 
 DELETE_FREQUENCY=3
 
-#各波長で経路探索するのか(0)、全体の容量から経路を選択して波長割り当てをするのか(1)
-SELECT_PRIORITY=0
 
+
+
+#動的制御パラメータ
+PATH_TIME=10000
+REAL_TIME=6000
+AVE_HOLDTIME=5000
+FLU_PROPORTION=1
 
 
 #demand (0:uniform, 1:central)
@@ -28,8 +35,8 @@ CENTRAL_NODE=2
 CENTRAL_DEGREE=1
 
 SIMULATION_NUM=5
-MAINTRAIN_TIME=10
-EVALUATE_SIM_NUM=30
+MAINTRAIN_TIME=300
+EVALUATE_SIM_NUM=50
 
 #NN用パラメータ
 HIDDEN_NUM=32

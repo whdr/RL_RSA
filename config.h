@@ -17,6 +17,12 @@ typedef struct Config {
 	int delete_frequency;
 	int select_priority;
 
+	/*動的処理用パラメータ*/
+	int time; /*実験時間*/
+	int real_time;/*測定開始時間*/
+	double flu_proportion;/*初期トラフィック期待値の変動割合*/
+
+
 	int topology;
 	int hop_slug;
 	int outputStatus;
