@@ -182,20 +182,22 @@ int main(int argc, const char *argv[]) {
 	if (cfg->outputStatus == 1)printf("res   -   %.3lf\n\n", res_NN);
 	output_weight(nn, cfg);
 
-
-	for (int sim = 0; sim < 1; sim++) {
+	int num = 10;
+	for (int sim = 0; sim < num; sim++) {
 		if (cfg->outputStatus == 1)printf("convention - ");
-		tmp_conv = evaluate(agent, nn, 1, cfg);
-		if (res_conv > tmp_conv)
-			res_conv = tmp_conv;
+		res_conv += evaluate(agent, nn, 1, cfg);
+		/*if (res_conv > tmp_conv)
+			res_conv = tmp_conv;*/
 	}
+	res_conv = res_conv / num;
 
-	for (int sim = 0; sim < 1; sim++) {
+	for (int sim = 0; sim < num; sim++) {
 		if (cfg->outputStatus == 1)printf("dijkstra - ");
-		tmp_dijk = evaluate(agent, nn, 1, cfg);
-		if (res_dijk > tmp_dijk)
-			res_dijk = tmp_dijk;
+		res_dijk += evaluate(agent, nn, 2, cfg);
+		/*if (res_dijk > tmp_dijk)
+			res_dijk = tmp_dijk;*/
 	}
+	res_dijk = res_dijk / num;
 	/*ファイル片付け*/
 	fclose(cfg->action_process_file);
 	fclose(cfg->blocking_link_hist_file);
