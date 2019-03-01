@@ -22,10 +22,10 @@ Config *Config_new(const char *config) {
 	cfg->topology = ConfigFileReader_get_int(cfr, "TOPOLOGY");
 	cfg->hop_slug = ConfigFileReader_get_int(cfr, "HOP_SLUG");
 	cfg->fiber_distribution = ConfigFileReader_get_int(cfr, "FIBER_DISTRIBUTION");
-	if (cfg->fiber_distribution == 0)
-		cfg->max_fiber_num = 1;
-	else if (cfg->fiber_distribution == 1)
-		cfg->max_fiber_num = 3;
+	//if (cfg->fiber_distribution == 0)
+	//	cfg->max_fiber_num = 1;
+	//else if (cfg->fiber_distribution == 1)
+	//	cfg->max_fiber_num = 3;
 	cfg->fiber_basis_num = ConfigFileReader_get_int(cfr, "FIBER_NUM");
 	cfg->freq_num = ConfigFileReader_get_int(cfr, "FREQ_NUM");
 	cfg->selectFreq_mode = ConfigFileReader_get_int(cfr, "SELECTFREQ_MODE");
@@ -45,7 +45,7 @@ Config *Config_new(const char *config) {
 
 	/*試行Config*/
 	cfg->sim_num = ConfigFileReader_get_int(cfr, "SIMULATION_NUM");
-	cfg->evaluate_num = ConfigFileReader_get_int(cfr, "EVALUATE_SIM_NUM");
+	cfg->evaluate_time = ConfigFileReader_get_int(cfr, "EVALUATE_SIM_NUM");
 
 	/*NN用*/
 	cfg->hidden_num = ConfigFileReader_get_int(cfr, "HIDDEN_NUM");/*隠れ層のニューロン数*/

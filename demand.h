@@ -55,7 +55,7 @@ void Demand_Add(DemandList *aDemandL, int src, int hop, int start_t, int end_t, 
 void printDemand(DemandList *aDemandl, Config *cfg);
 void Demand_AllDel(struct Demand *dmnd);
 void Delete_DemandList(struct DemandList *aDemandL);
-void Make_DemandList(DemandList *dmnd_l, double traffic, Config *cfg);
+void Make_DemandList(DemandList *dmnd_l, double traffic, int time, Config *cfg);
 
 struct DemandList *setPartOfDemand(DemandList *aDemandl, DemandList *aDemandlAll, int t, Config *cfg);
 void AddDemand(DemandList *aDemandl, Demand *aDemand);

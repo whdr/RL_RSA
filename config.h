@@ -26,7 +26,7 @@ typedef struct Config {
 	int route_candidate;
 
 	int sim_num;
-	int evaluate_num;
+	int evaluate_time;
 
 	//demand
 	int demand_pattern;

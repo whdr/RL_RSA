@@ -88,7 +88,7 @@ void Demand_Add(DemandList *aDemandL, int src, int dst, int start_t, int end_t, 
 
 
 /*デマンド到着・保留時間作成関数*/
-void Make_DemandList(DemandList *dmnd_l, double traffic, Config *cfg)
+void Make_DemandList(DemandList *dmnd_l, double traffic, int time, Config *cfg)
 {
 	int t = 0, start = 0, end = 0, holdtime = 0;
 	int ave_holdtime = 5000;/*単位時間をいくつに刻むか*/
@@ -113,12 +113,12 @@ void Make_DemandList(DemandList *dmnd_l, double traffic, Config *cfg)
 		for (int dst = 0; dst < cfg->node_num; dst++) {
 			if (tDemand[dst][src] != 0) {
 				traffic_val = tDemand[dst][src] * cfg->flu_proportion;/*実質的なλ(頻度)*/
-				while (start < cfg->time) {
-					t = MyRequest_Interval(traffic_val, ave_holdtime, cfg->time - start);
+				while (start < time) {
+					t = MyRequest_Interval(traffic_val, ave_holdtime, time - start);
 					start += t;
-					holdtime = MyRequest_Interval(1.0, ave_holdtime, cfg->time - start);
+					holdtime = MyRequest_Interval(1.0, ave_holdtime, time - start);
 					end = start + holdtime;
-					if (start <= cfg->time)
+					if (start <= time)
 						Demand_Add(dmnd_l, src, dst, start, end, -1, -1, cfg);
 				}
 				start = 0;
@@ -372,7 +372,7 @@ struct Demand *New_Search(int t, SortedDemand *arvl_l, int *st, int *another)
 
 short *compress_DemandL(SortedDemand *s_dmnd, SortedDemand *e_dmnd, Config *cfg) {
 	int job_num = 1;
-	short *job_table = (short*)malloc(100000 * sizeof(short));
+	short *job_table = (short*)malloc(20000 * sizeof(short));
 	for (int t = 0; t < cfg->time; t++) {
 		int end = 0, st = 0, another = 0;
 

@@ -10,7 +10,7 @@ Agent *init_agent(MATRIX *aRoute_table, MATRIX *aFiber_data, Config *cfg) {
 	Agent *agent = (Agent *)malloc(sizeof(Agent));
 
 	agent->fiber_data = aFiber_data;
-	agent->channel_num = cfg->fiber_basis_num * cfg->max_fiber_num;
+	agent->channel_num = cfg->fiber_basis_num;
 	agent->route_table_index = (int**)calloc(cfg->node_num, sizeof(int*));
 	for (int i = 0; i < cfg->node_num; i++)
 		agent->route_table_index[i] = (int*)calloc(cfg->node_num, sizeof(int));
@@ -32,11 +32,10 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 	/*main_learn*/
 	for (long int sim = 0; sim < cfg->main_train_time; sim++) {
 
-
 		Demand *endd, *std;				/*ポインタ用*/
 		SortedDemand *stl, *enl;			/*ソート用デマンドリスト*/
 		DemandList *tDemandL = DemandList_New();
-		Make_DemandList(tDemandL, 1, cfg);/*デマンドの生成*/
+		Make_DemandList(tDemandL, 1, cfg->time, cfg);/*デマンドの生成*/
 													  /* 開始時刻順にソート */
 		stl = SortedDemand_New(tDemandL);
 		Put_Start_Time_To_SortIdx(stl);
@@ -52,8 +51,10 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 		int blocking_num = 0, path_num = 0;;
 		capa = (double*)malloc(cfg->input_num * sizeof(double));
 		double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));
-		for (int i = 0; i < cfg->input_num; i++)
-			capa[i] = 1;
+		/*ファイバ情報をもとにCapaの設定*/
+		for (int i = 0; i < cfg->input_num; i++) 
+			capa[i] = (double)agent->fiber_data->val[0][i] / cfg->fiber_basis_num;
+		
 		int escape_flag = 0;
 
 		for (int job = 1; job < tJobTable[0]; job++) {
@@ -73,7 +74,7 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 				if ((route_index = select_route(std->src, std->dst, capa,
 					cfg->epsilon, nn, agent, learn_mode, 0, 0, cfg)) = !- 1) /*ε₋Greedyな選択*/
 					escape_flag = 1;//escape;/*brocking*/
-				
+
 
 				/*割当*/
 				std->assign = 1;
@@ -83,13 +84,13 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 				for (int i = 0; i < cfg->input_num; i++)
 					capa_tmp[i] = capa[i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//次状態候補
 				/*順方向の計算*//*下二つのForward計算順を変えると nn->hiの挙動が変わる　学習の際、Current_value計算のhiを用いたいから*/
-				value_next = forward(nn, capa, cfg);
+				value_next = forward(nn, capa_tmp, cfg);
 				value_current = forward(nn, capa, cfg);
 
 				for (int i = 0; i < cfg->input_num; i++)
 					capa[i] = capa[i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//次状態候補
 
-				
+
 				if (cfg->reward == 0)
 					reward = get_shortestHop(agent, std->src, std->dst, cfg);
 				else
@@ -107,8 +108,8 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 				if (alpha < 0.0001)
 					alpha = 0.0001;
 				/*収束具合のファイル出力*/
-				if (path_sum % 1000 == 0) {
-					fprintf(cfg->accuracy_learn_file, "%lf, %lf\n", e_total / 1000, alpha);
+				if (path_sum % 100 == 0) {
+					fprintf(cfg->accuracy_learn_file, "%lf, %lf\n", e_total / 100, alpha);
 					e_total = 0;
 				}
 
@@ -141,70 +142,71 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 	//double res_block = 0.0;// (double*)malloc(cfg->evaluate_sim_num * sizeof(double));
 
 	//double *capa_total = (double*)malloc(cfg->input_num * sizeof(double));
-	for (int sim = 0; sim < cfg->evaluate_num; sim++) {
 
-		Demand *endd, *std;				/*ポインタ用*/
-		SortedDemand *stl, *enl;			/*ソート用デマンドリスト*/
-		DemandList *tDemandL = DemandList_New();
-		Make_DemandList(tDemandL, cfg->flu_proportion, cfg);/*デマンドの生成*/
-		/* 開始時刻順にソート */
-		stl = SortedDemand_New(tDemandL);
-		Put_Start_Time_To_SortIdx(stl);
-		Sort_Demand_Index_Small(stl);
-		/* 終了時刻順にソート */
-		enl = SortedDemand_New(tDemandL);
-		Put_End_Time_To_SortIdx(enl);
-		Sort_Demand_Index_Small(enl);
-		short *tJobTable = compress_DemandL(stl, enl, cfg);/*無駄な時間をなくすため、ジョブのない時間は走査しない*/
+	Demand *endd, *std;				/*ポインタ用*/
+	SortedDemand *stl, *enl;			/*ソート用デマンドリスト*/
+	DemandList *tDemandL = DemandList_New();
+	Make_DemandList(tDemandL, cfg->flu_proportion, cfg->evaluate_time, cfg);/*デマンドの生成*/
+	/* 開始時刻順にソート */
+	stl = SortedDemand_New(tDemandL);
+	Put_Start_Time_To_SortIdx(stl);
+	Sort_Demand_Index_Small(stl);
+	/* 終了時刻順にソート */
+	enl = SortedDemand_New(tDemandL);
+	Put_End_Time_To_SortIdx(enl);
+	Sort_Demand_Index_Small(enl);
+	short *tJobTable = compress_DemandL(stl, enl, cfg);/*無駄な時間をなくすため、ジョブのない時間は走査しない*/
 
-		path_sum += tDemandL->dmnd_num;
-		int end = 0, st = 0, another = 0;
-		int blocking_num = 0, path_num = 0;;
-		capa = (double**)malloc(cfg->freq_num * sizeof(double*));
-		for (int freq = 0; freq < cfg->freq_num; freq++) {
-			capa[freq] = (double*)malloc(cfg->input_num * sizeof(double));
-			for (int i = 0; i < cfg->input_num; i++)
-				capa[freq][i] = 1;
-		}
-		for (int job = 1; job < tJobTable[0]; job++) {
-
-			/*削除*/
-			while ((endd = End_Search(tJobTable[job], enl, &end, &another)) != NULL) {
-				/*Capaから削除*/
-				for (int i = 0; i < cfg->input_num; i++) {
-					if (agent->route_table->val[endd->route_index][i + 2] != 0)
-						capa[endd->freq][i] = capa[endd->freq][i] + agent->route_table->val[endd->route_index][i + 2] / agent->channel_num;
-				}
-				/*pathListから削除*/
-				endd->assign = 2;
-			}
-
-			/*設立*/
-			while ((std = New_Search(tJobTable[job], stl, &st, &another)) != NULL) {
-				select_freq(std, capa, nn, agent, mode_forDicision, cfg);
-				if (std->assign == 5) {//割当ができなくなるまで
-					blocking_num++;/*ブロッキング*/
-					continue;
-				}
-				/*割当*/
-				for (int i = 0; i < cfg->input_num; i++)
-					capa[std->freq][i] = capa[std->freq][i] - agent->route_table->val[std->route_index][i + 2] / agent->channel_num;
-
-			}
-		}
-
-		totalBlockingNum += blocking_num;
-		/*capa　片付け*/
-		free(tJobTable);
-		for (int i = 0; i < cfg->freq_num; i++)
-			free(capa[i]);
-		free(capa);
-		Delete_SortedDemand2(stl);
-		Delete_SortedDemand(enl);
-		free(tDemandL->dmnd_head);
-		free(tDemandL);
-
+	int end = 0, st = 0, another = 0;
+	int blocking_num = 0, path_num = 0;;
+	capa = (double**)malloc(cfg->freq_num * sizeof(double*));
+	for (int freq = 0; freq < cfg->freq_num; freq++) {
+		capa[freq] = (double*)malloc(cfg->input_num * sizeof(double));
+		for (int i = 0; i < cfg->input_num; i++)
+			capa[freq][i] = 1;
 	}
+	for (int job = 1; job < tJobTable[0]; job++) {
+
+		/*削除*/
+		while ((endd = End_Search(tJobTable[job], enl, &end, &another)) != NULL) {
+			/*Capaから削除*/
+			for (int i = 0; i < cfg->input_num; i++) {
+				if (agent->route_table->val[endd->route_index][i + 2] != 0)
+					capa[endd->freq][i] = capa[endd->freq][i] + agent->route_table->val[endd->route_index][i + 2] / agent->channel_num;
+			}
+			/*pathListから削除*/
+			endd->assign = 2;
+		}
+
+		/*設立*/
+		while ((std = New_Search(tJobTable[job], stl, &st, &another)) != NULL) {
+			if (tJobTable[job] > cfg->real_time)
+				path_sum++;
+			select_freq(std, capa, nn, agent, mode_forDicision, cfg);
+			if (std->assign == 5) {//割当ができなくなるまで
+				if (tJobTable[job] > cfg->real_time)
+					blocking_num++;/*ブロッキング*/
+				continue;
+			}
+			/*割当*/
+			for (int i = 0; i < cfg->input_num; i++)
+				capa[std->freq][i] = capa[std->freq][i] - agent->route_table->val[std->route_index][i + 2] / agent->channel_num;
+
+		}
+	}
+
+	totalBlockingNum += blocking_num;
+	/*capa　片付け*/
+	free(tJobTable);
+	for (int i = 0; i < cfg->freq_num; i++)
+		free(capa[i]);
+	free(capa);
+	Delete_SortedDemand2(stl);
+	Delete_SortedDemand(enl);
+	free(tDemandL->dmnd_head);
+	free(tDemandL);
+
+
 	/*画面出力*/
 	if (cfg->outputStatus == 1)printf("blocking_rate -> %lf\n", (double)totalBlockingNum / path_sum);
 	return (double)totalBlockingNum / path_sum;

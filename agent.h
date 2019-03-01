@@ -15,7 +15,6 @@ typedef struct Agent {
 	int *shortest_job_num;/*最短経路が選ばれた回数*/
 	int channel_num;/*train_dataのdecode用　リンクキャパシティを1で正規化するため*/
 	int **route_table_index;/*経路候補テーブル読み取り時、探索範囲を狭めるために利用*/
-
 	MATRIX *route_table;
 	MATRIX *fiber_data;
 }Agent;

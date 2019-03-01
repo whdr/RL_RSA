@@ -1,23 +1,2 @@
-﻿  main.cpp
-c:\users\shiraki2\desktop\nn_26\nn\main.cpp(142): warning C4244: '引数': 'double' から 'unsigned int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\main.cpp(208): error C2065: 'res_before': 定義されていない識別子です。
-c:\users\shiraki2\desktop\nn_26\nn\main.cpp(208): error C2065: 'res_initial': 定義されていない識別子です。
-c:\users\shiraki2\desktop\nn_26\nn\main.cpp(174): warning C4476: 'printf' : 形式指定子に不明な種類フィールド文字 '\x02' があります
-c:\users\shiraki2\desktop\nn_26\nn\main.cpp(174): warning C4474: 'printf': 書式文字列に渡された引数の数が多すぎます
-  c:\users\shiraki2\desktop\nn_26\nn\main.cpp(174): note: プレースホルダーとそのパラメーターには 2 の可変個引数が必要ですが、3 が指定されています。
-c:\users\shiraki2\desktop\nn_26\nn\main.cpp(208): warning C4473: 'printf': 書式文字列として渡された引数が不足しています
-  c:\users\shiraki2\desktop\nn_26\nn\main.cpp(208): note: プレースホルダーとそのパラメーターには 4 の可変個引数が必要ですが、2 が指定されています。
-  c:\users\shiraki2\desktop\nn_26\nn\main.cpp(208): note: 不足している可変個引数 3 が書式文字列 '%.3lf' に必要です
-  agent.cpp
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(74): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(96): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(30): warning C4101: 'train_time': ローカル変数は 1 度も使われていません。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(252): warning C4244: '+=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(321): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(331): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(372): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(469): warning C4244: '+=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(478): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(479): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(480): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
-  コードを生成中...
+﻿  NN.vcxproj -> C:\Users\SHIRAKI2\Desktop\NN_26\Debug\NN.exe
+  NN.vcxproj -> C:\Users\SHIRAKI2\Desktop\NN_26\Debug\NN.pdb (Partial PDB)
