@@ -26,7 +26,6 @@ Config *Config_new(const char *config) {
 	//	cfg->max_fiber_num = 1;
 	//else if (cfg->fiber_distribution == 1)
 	//	cfg->max_fiber_num = 3;
-	cfg->fiber_basis_num = ConfigFileReader_get_int(cfr, "FIBER_NUM");
 	cfg->freq_num = ConfigFileReader_get_int(cfr, "FREQ_NUM");
 	cfg->selectFreq_mode = ConfigFileReader_get_int(cfr, "SELECTFREQ_MODE");
 	cfg->select_priority = ConfigFileReader_get_int(cfr, "SELECT_PRIORITY");
@@ -106,10 +105,11 @@ Config *Config_new(const char *config) {
 	cfg->read_weight_h_file = fopen_errorcheck(ConfigFileReader_get_str(cfr, "READ_WEIGHT_H_FILE"), "r");
 	cfg->read_weight_o_file = fopen_errorcheck(ConfigFileReader_get_str(cfr, "READ_WEIGHT_O_FILE"), "r");
 
+	cfg->fiber_demand = ConfigFileReader_get_int(cfr, "FIBER_DEMAND");
+
 	char fiber_file_name[1024];
 	/*node-num から トポロジ番号に変更する*/
-	if (cfg->fiber_distribution == 0)sprintf(fiber_file_name, "fiber/%d_1_uni.txt", cfg->node_num);
-	else if (cfg->fiber_distribution == 1)sprintf(fiber_file_name, "fiber/%d_1_ununi.txt", cfg->node_num);
+	sprintf(fiber_file_name, "fiber/%d/%d_%d_uni.txt", cfg->freq_num, cfg->central_node, cfg->fiber_demand);
 	cfg->fiber_file = fopen_errorcheck(fiber_file_name, "r");
 	cfg->accuracy_learn_file = fopen_errorcheck2(ConfigFileReader_get_str(cfr, "ACCURACY_MAINLEARN_FILE"), "w", outdir);
 	cfg->capacity_transition_file = fopen_errorcheck2(ConfigFileReader_get_str(cfr, "CAPACITY_TRANSITION_FILE"), "w", outdir);

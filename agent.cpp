@@ -10,7 +10,11 @@ Agent *init_agent(MATRIX *aRoute_table, MATRIX *aFiber_data, Config *cfg) {
 	Agent *agent = (Agent *)malloc(sizeof(Agent));
 
 	agent->fiber_data = aFiber_data;
-	agent->channel_num = cfg->fiber_basis_num;
+	int tMaxFiberNum = -1000;
+	for (int i = 0; i < cfg->input_num; i++)
+		if (agent->fiber_data->val[i][0] > tMaxFiberNum)
+			tMaxFiberNum = agent->fiber_data->val[i][0];
+	agent->channel_num = tMaxFiberNum;
 	agent->route_table_index = (int**)calloc(cfg->node_num, sizeof(int*));
 	for (int i = 0; i < cfg->node_num; i++)
 		agent->route_table_index[i] = (int*)calloc(cfg->node_num, sizeof(int));
@@ -52,8 +56,8 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 		capa = (double*)malloc(cfg->input_num * sizeof(double));
 		double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));
 		/*ファイバ情報をもとにCapaの設定*/
-		for (int i = 0; i < cfg->input_num; i++) 
-			capa[i] = (double)agent->fiber_data->val[0][i] / cfg->fiber_basis_num;
+		for (int i = 0; i < cfg->input_num; i++)
+			capa[i] = (double)agent->fiber_data->val[i][0] / agent->channel_num;
 		
 		int escape_flag = 0;
 
@@ -163,7 +167,7 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 	for (int freq = 0; freq < cfg->freq_num; freq++) {
 		capa[freq] = (double*)malloc(cfg->input_num * sizeof(double));
 		for (int i = 0; i < cfg->input_num; i++)
-			capa[freq][i] = 1;
+			capa[freq][i] = (double)agent->fiber_data->val[i][0] / agent->channel_num;
 	}
 	for (int job = 1; job < tJobTable[0]; job++) {
 

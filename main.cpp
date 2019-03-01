@@ -183,16 +183,18 @@ int main(int argc, const char *argv[]) {
 	output_weight(nn, cfg);
 
 	int num = 10;
+	res_conv = 0.0;
+	res_dijk = 0.0;
+	if (cfg->outputStatus == 1)printf("convention - ");
 	for (int sim = 0; sim < num; sim++) {
-		if (cfg->outputStatus == 1)printf("convention - ");
 		res_conv += evaluate(agent, nn, 1, cfg);
 		/*if (res_conv > tmp_conv)
 			res_conv = tmp_conv;*/
 	}
 	res_conv = res_conv / num;
 
+	if (cfg->outputStatus == 1)printf("dijkstra - ");
 	for (int sim = 0; sim < num; sim++) {
-		if (cfg->outputStatus == 1)printf("dijkstra - ");
 		res_dijk += evaluate(agent, nn, 2, cfg);
 		/*if (res_dijk > tmp_dijk)
 			res_dijk = tmp_dijk;*/
@@ -206,12 +208,12 @@ int main(int argc, const char *argv[]) {
 
 	/*o—Í*/
 	fprintf(stderr, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d, %.2lf, "
-		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->flu_proportion);
+		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_demand, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->flu_proportion);
 	fprintf(stderr, "%.6lf, %.6lf, %.6lf\n"
 		, res_conv, res_dijk, res_NN);
 
 	fprintf(cfg->output_file, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d, %.2lf, "
-		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->flu_proportion);
+		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_demand, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->flu_proportion);
 	fprintf(cfg->output_file, "%.12lf, %.12lf, %.12lf\n"
 		, res_conv, res_dijk, res_NN);
 

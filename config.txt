@@ -13,11 +13,12 @@ SELECT_PRIORITY=0
 
 #Fiber (0: 一様配置、1: ununi)
 FIBER_DISTRIBUTION=0
-FIBER_NUM=5
-FREQ_NUM=10
+FREQ_NUM=25
 
 #いくつのNNを生成するか
 SIMULATION_NUM=1
+
+FIBER_DEMAND=2
 
 #学習時に1エピソード当たりのステップ数
 PATH_TIME=10000
@@ -30,12 +31,12 @@ EVALUATE_SIM_NUM=100000
 #動的制御パラメータ
 REAL_TIME=6000
 AVE_HOLDTIME=5000
-FLU_PROPORTION=2
+FLU_PROPORTION=1
 
 
 #demand (0:uniform, 1:central)
 DEMAND_PATTERN=1
-CENTRAL_NODE=2
+CENTRAL_NODE=0
 CENTRAL_DEGREE=1
 
 
@@ -82,6 +83,7 @@ OUTPUT_FILE=output.csv
 READ_WEIGHT_I_FILE=weight/3/weight_i.csv
 READ_WEIGHT_H_FILE=weight/3/weight_h.csv
 READ_WEIGHT_O_FILE=weight/3/weight_o.csv
+FIBER_FILE=fiber/%d_1_uni.txt
 
 #ディレクトリ
 OUTDIR=outdir/

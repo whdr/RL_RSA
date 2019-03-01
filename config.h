@@ -7,9 +7,9 @@
 
 typedef struct Config {
 	int node_num;
-	int fiber_basis_num;
-	int max_fiber_num;
+
 	int freq_num;
+	int fiber_demand;
 	
 	int route_k;
 
