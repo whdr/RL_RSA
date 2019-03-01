@@ -10,11 +10,9 @@ typedef struct Config {
 	int fiber_basis_num;
 	int max_fiber_num;
 	int freq_num;
-	int lim_block_num;
-
+	
 	int route_k;
 
-	int delete_frequency;
 	int select_priority;
 
 	/*動的処理用パラメータ*/
@@ -22,14 +20,13 @@ typedef struct Config {
 	int real_time;/*測定開始時間*/
 	double flu_proportion;/*初期トラフィック期待値の変動割合*/
 
-
 	int topology;
 	int hop_slug;
 	int outputStatus;
 	int route_candidate;
 
 	int sim_num;
-	int evaluate_sim_num;
+	int evaluate_num;
 
 	//demand
 	int demand_pattern;
@@ -38,8 +35,6 @@ typedef struct Config {
 
 	int fiber_distribution;
 	int selectFreq_mode;
-
-
 
 	//related on NN
 	int input_num;

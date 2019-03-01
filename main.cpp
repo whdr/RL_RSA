@@ -88,7 +88,7 @@ NN95の高い性能の理由解明
 ⇒波長選択法が誤っていた
 　修正
  Dijkの波長選択法を価値基準（×）からFFにした
- 
+
 ーーーーーーーーーーーーーー
 NN_ver20
 さきに経路選択してから波長選択をする
@@ -128,12 +128,9 @@ random traffic
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
-
 #include "agent.h"
 
 int main(int argc, const char *argv[]) {
-
-	srand((unsigned int)time(NULL) / 2);
 
 	Config *cfg;
 	const char *config;
@@ -142,19 +139,19 @@ int main(int argc, const char *argv[]) {
 	else
 		config = "config.txt";
 	cfg = Config_new(config);
+	srand((unsigned int)time(NULL) / 2 + cfg->flu_proportion + (unsigned int)cfg->main_train_time / 100 + cfg->central_node);
 
 	/*ファイル読み込み*/
 	MATRIX *fiber_data = Load_Matrix(cfg->fiber_file);
 	MATRIX *route_table = Load_Matrix(cfg->route_table_file);
 	cfg->input_num = route_table->row_num - 3;
-	/*経路候補の間引き*/
-	route_table = reduce_routeCandidate(route_table, cfg);
+	route_table = reduce_routeCandidate(route_table, cfg);/*経路候補の間引き*/
 	Agent *agent = init_agent(route_table, fiber_data, cfg);
 	NN *nn = NN_new(cfg);
 	NN *nn_save = NN_new(cfg);
 	/*結果を保持する準備*/
-	double res_before = 0.0, res_initial = 0.0, res_NN = 0.0, res_NN_dijk = 0.0, res_conv = 0.0, res_dijk = 0.0, tmp_before = 0.0, tmp_initial = 0.0, tmp_NN = 0.0, tmp_NN_dijk = 0.0, tmp_dijk = 0.0, tmp_conv = 0.0;
-	
+	double res_NN = 1000.0, res_conv = 10000.0, res_dijk = 10000.0, tmp_NN, tmp_dijk, tmp_conv;
+
 	/*確認用*/
 	if (cfg->read_weight == 1) {
 		MATRIX *i_table = Load_Matrix(cfg->read_weight_i_file);
@@ -170,12 +167,11 @@ int main(int argc, const char *argv[]) {
 	/*結果の平均化のため、Sim_num回　行いその max を結果とする*/
 	/*手法C*/
 	for (int sim = 0; sim < cfg->sim_num; sim++) {
-		/*重みの初期化*/
-		init_NN(nn, cfg);
+		init_NN(nn, cfg);/*重みの初期化*/
 		if (cfg->outputStatus == 1)printf("NN         - ");
-		//learn(nn, agent, MAIN_LEARN, cfg);		/*本学習*/
-		tmp_NN = evaluate(agent, nn, 0, cfg);
-		if (cfg->outputStatus == 0)printf("%d, %.3lf\n", sim, tmp_NN);
+		learn(nn, agent, MAIN_LEARN, cfg);	/*本学習*/
+		tmp_NN = evaluate(agent, nn, 0, cfg);/*評価*/
+		if (cfg->outputStatus == 0)printf("%d, %.2lf, %.6lf\n", sim, cfg->flu_proportion, tmp_NN);
 		if (res_NN > tmp_NN) {
 			res_NN = tmp_NN;
 			NN_copy(nn, nn_save, cfg);
@@ -186,13 +182,22 @@ int main(int argc, const char *argv[]) {
 	if (cfg->outputStatus == 1)printf("res   -   %.3lf\n\n", res_NN);
 	output_weight(nn, cfg);
 
+	for (int sim = 0; sim < 3; sim++) {
+		if (cfg->outputStatus == 1)printf("convention - ");
+		tmp_conv = evaluate(agent, nn, 1, cfg);
+		if (res_conv > tmp_conv)
+			res_conv = tmp_conv;
+	}
 
-	if (cfg->outputStatus == 1)printf("convention - ");
-	res_conv = evaluate(agent, nn, 1, cfg);
+	for (int sim = 0; sim < 3; sim++) {
+		if (cfg->outputStatus == 1)printf("dijkstra - ");
+		tmp_conv = evaluate(agent, nn, 1, cfg);
+		if (res_conv > tmp_conv)
+			res_conv = tmp_conv;
+	}
 	if (cfg->outputStatus == 1)printf("dijkstra   - ");
 	res_dijk = evaluate(agent, nn, 2, cfg);
 	if (cfg->outputStatus == 1)printf("\n");
-
 	/*ファイル片付け*/
 	fclose(cfg->action_process_file);
 	fclose(cfg->blocking_link_hist_file);
@@ -200,19 +205,17 @@ int main(int argc, const char *argv[]) {
 	fclose(cfg->accuracy_learn_file);
 
 	/*出力*/
-	if (cfg->outputStatus == 1)printf("random        - %.3lf\ninitial_learn - %.3lf\nmain_learn    - %.3lf\nconvention    - %.3lf\n", res_before / cfg->sim_num, res_initial / cfg->sim_num, res_NN, res_conv);
-	else {
-		fprintf(stderr, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d, %d, "
-			, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->delete_frequency);
-		fprintf(stderr, "%.1lf, %.1lf, %.1lf, %.3lf, %.3lf, %.3lf\n"
-			, res_conv, res_dijk, res_NN, res_dijk / res_conv, res_NN / res_conv, res_NN / res_dijk);
-	}
-	fprintf(cfg->output_file, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d, %d, "
-		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->delete_frequency);
-	fprintf(cfg->output_file, "%.3lf, %.3lf, %.3lf, %lf, %lf, %lf\n"
-		, res_conv, res_dijk, res_NN, res_dijk / res_conv, res_NN / res_conv, res_NN / res_dijk);
+	fprintf(stderr, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d, %.2lf, "
+		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->flu_proportion);
+	fprintf(stderr, "%.6lf, %.6lf, %.6lf\n"
+		, res_conv, res_dijk, res_NN);
 
-	getchar();
+	fprintf(cfg->output_file, "%d, %d, %ld, %d, %d, %d, %d, %d, %d, %d, %.2lf, "
+		, cfg->topology, cfg->sim_num, cfg->main_train_time, cfg->fiber_basis_num, cfg->freq_num, cfg->central_node, cfg->hidden_layer_num, cfg->hidden_num, cfg->hop_slug, cfg->route_candidate, cfg->flu_proportion);
+	fprintf(cfg->output_file, "%.12lf, %.12lf, %.12lf\n"
+		, res_conv, res_dijk, res_NN);
+
+	if (cfg->outputStatus == 1)getchar();
 	NN_delete(nn, cfg);
 	NN_delete(nn_save, cfg);
 

@@ -51,6 +51,7 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 		int end = 0, st = 0, another = 0;
 		int blocking_num = 0, path_num = 0;;
 		capa = (double*)malloc(cfg->input_num * sizeof(double));
+		double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));
 		for (int i = 0; i < cfg->input_num; i++)
 			capa[i] = 1;
 		int escape_flag = 0;
@@ -70,11 +71,9 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 			/*設立*/
 			while ((std = New_Search(tJobTable[job], stl, &st, &another)) != NULL) {
 				if ((route_index = select_route(std->src, std->dst, capa,
-					cfg->epsilon, nn, agent, learn_mode, 0, 0, cfg)) = !- 1) {/*ε₋Greedyな選択*/
+					cfg->epsilon, nn, agent, learn_mode, 0, 0, cfg)) = !- 1) /*ε₋Greedyな選択*/
 					escape_flag = 1;//escape;/*brocking*/
-				}
-				/*順方向の計算*/
-				value_current = forward(nn, capa, cfg);
+				
 
 				/*割当*/
 				std->assign = 1;
@@ -82,11 +81,15 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 				std->freq = 0;
 				path_sum++;
 				for (int i = 0; i < cfg->input_num; i++)
-					capa[i] = capa[i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//次状態候補
-				/*順方向の計算*/
+					capa_tmp[i] = capa[i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//次状態候補
+				/*順方向の計算*//*下二つのForward計算順を変えると nn->hiの挙動が変わる　学習の際、Current_value計算のhiを用いたいから*/
 				value_next = forward(nn, capa, cfg);
+				value_current = forward(nn, capa, cfg);
 
-				/*した二つの順番を変えるnn->hiの挙動が変わり良くない ????謎コメント*/
+				for (int i = 0; i < cfg->input_num; i++)
+					capa[i] = capa[i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//次状態候補
+
+				
 				if (cfg->reward == 0)
 					reward = get_shortestHop(agent, std->src, std->dst, cfg);
 				else
@@ -119,9 +122,12 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 			if (escape_flag == 1)
 				break;
 		}
+		free(tJobTable);
 		Delete_SortedDemand2(stl);
 		Delete_SortedDemand(enl);
-		Delete_DemandList(tDemandL);
+		//Delete_DemandList(tDemandL);
+		free(tDemandL->dmnd_head);
+		free(tDemandL);
 		free(capa);
 	}
 }
@@ -135,7 +141,7 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 	//double res_block = 0.0;// (double*)malloc(cfg->evaluate_sim_num * sizeof(double));
 
 	//double *capa_total = (double*)malloc(cfg->input_num * sizeof(double));
-	for (int sim = 0; sim < cfg->evaluate_sim_num; sim++) {
+	for (int sim = 0; sim < cfg->evaluate_num; sim++) {
 
 		Demand *endd, *std;				/*ポインタ用*/
 		SortedDemand *stl, *enl;			/*ソート用デマンドリスト*/
@@ -195,8 +201,9 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 		free(capa);
 		Delete_SortedDemand2(stl);
 		Delete_SortedDemand(enl);
+		free(tDemandL->dmnd_head);
 		free(tDemandL);
-		
+
 	}
 	/*画面出力*/
 	if (cfg->outputStatus == 1)printf("blocking_rate -> %lf\n", (double)totalBlockingNum / path_sum);
@@ -347,7 +354,6 @@ mode_forDicision 0:NNの価値の最大値、1:最短経路からFF、2: 残余�
 output_flag 評価を行う時(evaluate)、output_flagがオンの時,action_process.csv ファイルに出力する
 */
 void select_freq(Demand *aDemand, double **capa, NN *nn, Agent *agent, int mode_forDicision, Config *cfg) {
-
 
 	int route_index = -1, target_route_index = -1;
 	if (cfg->select_priority == 1) {

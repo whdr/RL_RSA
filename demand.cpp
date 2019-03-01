@@ -156,15 +156,15 @@ void Demand_AllDel(struct Demand *dmnd)
 void Delete_DemandList(struct DemandList *aDemandL)
 {
 	if (aDemandL->dmnd_head != NULL) {
-		Demand *temp = aDemandL->dmnd_head;
-		Demand *demand = temp->next;
+		Demand *demand = aDemandL->dmnd_head;
+		Demand *temp;
 
-		while (demand != NULL) {
+		while (demand->next != NULL) {
 			temp = demand->next;
 			free(demand);
 			demand = temp;
 		}
-		
+
 	}
 	free(aDemandL);
 }
@@ -353,21 +353,21 @@ struct Demand *End_Search(int t, SortedDemand *end_l, int *end, int *another)
 /*‚±‚ÌŠÔ‚Éİ—§‚·‚é”g’·ƒpƒX‚ª‘¶İ‚·‚é‚©*/
 struct Demand *New_Search(int t, SortedDemand *arvl_l, int *st, int *another)
 {
-		int i;
-		Demand *dmnd;
-		for (i = *st; i < arvl_l->dmnd_num; i++) {
-			dmnd = arvl_l->dmnd[i];
-			if ((t == dmnd->start_t) && (dmnd->assign == 0)) {
-				*st = i;
-				*another = 1;
-				return dmnd;
-			}
-			else if (dmnd->start_t > t) {
-				*another = 0;
-				break;
-			}
+	int i;
+	Demand *dmnd;
+	for (i = *st; i < arvl_l->dmnd_num; i++) {
+		dmnd = arvl_l->dmnd[i];
+		if ((t == dmnd->start_t) && (dmnd->assign == 0)) {
+			*st = i;
+			*another = 1;
+			return dmnd;
 		}
-		return NULL;
+		else if (dmnd->start_t > t) {
+			*another = 0;
+			break;
+		}
+	}
+	return NULL;
 }
 
 short *compress_DemandL(SortedDemand *s_dmnd, SortedDemand *e_dmnd, Config *cfg) {
@@ -401,7 +401,7 @@ void Delete_SortedDemand(struct SortedDemand *s_dmnd)
 void Delete_SortedDemand2(struct SortedDemand *s_dmnd)
 {
 	int i;
-	for (i = 0; i<s_dmnd->dmnd_num; i++) {
+	for (i = 0; i < s_dmnd->dmnd_num; i++) {
 		free_nullcheck(s_dmnd->dmnd[i]);
 	}
 
