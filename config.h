@@ -10,7 +10,7 @@ typedef struct Config {
 
 	int freq_num;
 	int fiber_demand;
-	
+
 	int route_k;
 
 	int select_priority;
@@ -31,6 +31,7 @@ typedef struct Config {
 	//demand
 	int demand_pattern;
 	int central_node;
+	int central_node_2;
 	int central_degree;
 
 	int fiber_distribution;

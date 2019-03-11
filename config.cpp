@@ -36,9 +36,10 @@ Config *Config_new(const char *config) {
 	cfg->flu_proportion = ConfigFileReader_get_double(cfr, "FLU_PROPORTION");/*初期トラフィック期待値の変動割合*/
 
 
-	/*トラフィックConfig*/
+																			 /*トラフィックConfig*/
 	cfg->demand_pattern = ConfigFileReader_get_int(cfr, "DEMAND_PATTERN");
 	cfg->central_node = ConfigFileReader_get_int(cfr, "CENTRAL_NODE");
+	cfg->central_node_2 = ConfigFileReader_get_int(cfr, "CENTRAL_NODE2");
 	cfg->central_degree = ConfigFileReader_get_int(cfr, "CENTRAL_DEGREE");
 	cfg->route_candidate = ConfigFileReader_get_int(cfr, "ROUTE_CANDIDATE");
 
@@ -61,7 +62,7 @@ Config *Config_new(const char *config) {
 	cfg->gamma = ConfigFileReader_get_double(cfr, "GAMMA");
 	cfg->lambda = ConfigFileReader_get_double(cfr, "LAMBDA");
 	cfg->reward = ConfigFileReader_get_double(cfr, "REWARD");
-	
+
 	/*プログラム上のConfig*/
 	cfg->output_accuracy = ConfigFileReader_get_int(cfr, "OUTPUT_ACCURACY");
 	cfg->output_capacity_graph = ConfigFileReader_get_int(cfr, "OUTPUT_CAPACITY_TRANSITION");

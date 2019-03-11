@@ -28,7 +28,7 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 	int path_sum = 0;/*割当パス総数　エピソードをまたがって合計する*/
 	double *capa;/*現状態、次状態のリンクキャパシティ*/
 	double e_total = 0.0;/*誤差　収束の確認用*/
-	//int *traffic = (int*)calloc(2, sizeof(int));/*パス設立要求　始端ノード番号と終端ノード番号*/
+						 //int *traffic = (int*)calloc(2, sizeof(int));/*パス設立要求　始端ノード番号と終端ノード番号*/
 	double alpha = cfg->alpha;/*学習率　α減衰on設定のためにAlpha独立*/
 	double value_current, value_next;
 	int reward, train_time, route_index;
@@ -40,7 +40,7 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 		SortedDemand *stl, *enl;			/*ソート用デマンドリスト*/
 		DemandList *tDemandL = DemandList_New();
 		Make_DemandList(tDemandL, 1, cfg->time, cfg);/*デマンドの生成*/
-													  /* 開始時刻順にソート */
+													 /* 開始時刻順にソート */
 		stl = SortedDemand_New(tDemandL);
 		Put_Start_Time_To_SortIdx(stl);
 		Sort_Demand_Index_Small(stl);
@@ -58,7 +58,7 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 		/*ファイバ情報をもとにCapaの設定*/
 		for (int i = 0; i < cfg->input_num; i++)
 			capa[i] = (double)agent->fiber_data->val[i][0] / agent->channel_num;
-		
+
 		int escape_flag = 0;
 
 		for (int job = 1; job < tJobTable[0]; job++) {
@@ -80,14 +80,14 @@ void learn(NN *nn, Agent *agent, int learn_mode, Config *cfg) {
 					escape_flag = 1;//escape;/*brocking*/
 
 
-				/*割当*/
+									/*割当*/
 				std->assign = 1;
 				std->route_index = route_index;
 				std->freq = 0;
 				path_sum++;
 				for (int i = 0; i < cfg->input_num; i++)
 					capa_tmp[i] = capa[i] - agent->route_table->val[route_index][i + 2] / agent->channel_num;//次状態候補
-				/*順方向の計算*//*下二つのForward計算順を変えると nn->hiの挙動が変わる　学習の際、Current_value計算のhiを用いたいから*/
+																											 /*順方向の計算*//*下二つのForward計算順を変えると nn->hiの挙動が変わる　学習の際、Current_value計算のhiを用いたいから*/
 				value_next = forward(nn, capa_tmp, cfg);
 				value_current = forward(nn, capa, cfg);
 
@@ -151,7 +151,7 @@ double evaluate(Agent *agent, NN *nn, int mode_forDicision, Config *cfg) {
 	SortedDemand *stl, *enl;			/*ソート用デマンドリスト*/
 	DemandList *tDemandL = DemandList_New();
 	Make_DemandList(tDemandL, cfg->flu_proportion, cfg->evaluate_time, cfg);/*デマンドの生成*/
-	/* 開始時刻順にソート */
+																			/* 開始時刻順にソート */
 	stl = SortedDemand_New(tDemandL);
 	Put_Start_Time_To_SortIdx(stl);
 	Sort_Demand_Index_Small(stl);
@@ -246,7 +246,7 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 
 	double *capa_tmp = (double*)malloc(cfg->input_num * sizeof(double));//最後の要素はホップ数
 
-																		   /*Routeファイルにおける、要求される始終端を持つ経路をそれぞれで価値判定を行う*/
+																		/*Routeファイルにおける、要求される始終端を持つ経路をそれぞれで価値判定を行う*/
 	for (int table_index = agent->route_table_index[s][d]; table_index < agent->route_table_index[s][d] + cfg->route_k; table_index++) {//すべての行動選択肢を比較して選択する
 		if (table_index >= agent->route_table->col_num)
 			break;
@@ -304,7 +304,7 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 	}
 	/*割り当て候補が一つもない*/
 	if (existing_flag == 0) {//cfg->max_or_min == 0 && output_value == -1000.0 || cfg->max_or_min != 0 && output_value == 1000.0 ||
-		//片付け
+							 //片付け
 		free(route_value_list);
 		free(capa_tmp);
 		free(for_random_select);
@@ -317,7 +317,7 @@ int select_route(int s, int d, double *capa, float epsilon, NN *nn, Agent *agent
 	float a = (float)b / 32767;
 
 	if (epsilon <= a) { //greedy
-		/*route_counter番目の経路の経路番号を出力*/
+						/*route_counter番目の経路の経路番号を出力*/
 		for (int i_flag = 0; i_flag < route_counter - 1; i_flag++) {
 			int max_route_value = 0;
 			int max_route_index_t = -1;

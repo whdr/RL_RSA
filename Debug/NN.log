@@ -1,2 +1,28 @@
-﻿  NN.vcxproj -> C:\Users\SHIRAKI2\Desktop\NN_26\Debug\NN.exe
+﻿  main.cpp
+c:\users\shiraki2\desktop\nn_26\nn\main.cpp(142): warning C4244: '引数': 'double' から 'unsigned int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\main.cpp(153): warning C4101: 'tmp_conv': ローカル変数は 1 度も使われていません。
+c:\users\shiraki2\desktop\nn_26\nn\main.cpp(153): warning C4101: 'tmp_dijk': ローカル変数は 1 度も使われていません。
+  config.cpp
+  agent.cpp
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(16): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(79): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(101): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(34): warning C4101: 'train_time': ローカル変数は 1 度も使われていません。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(258): warning C4244: '+=': 'double' から 'int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(327): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(337): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(378): warning C4244: '引数': 'double' から 'float' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(475): warning C4244: '+=': 'double' から 'int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(484): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(485): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
+c:\users\shiraki2\desktop\nn_26\nn\agent.cpp(486): warning C4244: '=': 'double' から 'int' への変換です。データが失われる可能性があります。
+  コードを生成中...
+  コンパイル中...
+  path.cpp
+  demand.cpp
+  NN.cpp
+  コードを生成中...
+  スキップ中... (関連する変更は検出されませんでした)
+  load_matrix.cpp
+  NN.vcxproj -> C:\Users\SHIRAKI2\Desktop\NN_26\Debug\NN.exe
   NN.vcxproj -> C:\Users\SHIRAKI2\Desktop\NN_26\Debug\NN.pdb (Partial PDB)
